@@ -1,6 +1,7 @@
 {
 module Grammar where
 import Data.Char (isDigit, isSpace)
+import Data.Ratio (Rational, (%))
 }
 
 %name parseStmt
@@ -8,7 +9,7 @@ import Data.Char (isDigit, isSpace)
 %error {parseError}
 
 %token
-  integer {TokenInteger $$}
+  rational {TokenRational $$}
   '+' {TokenPlus}
   '-' {TokenMinus}
   '*' {TokenStar}
@@ -18,44 +19,28 @@ import Data.Char (isDigit, isSpace)
 
 %%
 
-Stmt : Sum {Sum $1}
+Stmt : Sum {$1}
 
 Sum
-  : Sum '+' Term {Plus $1 $3}
-  | Sum '-' Term {Minus $1 $3}
-  | Term {Term $1}
+  : Sum '+' Term {$1 + $3}
+  | Sum '-' Term {$1 - $3}
+  | Term {$1}
 
 Term
-  : Term '*' Factor {Times $1 $3}
-  | Term '/' Factor {Div $1 $3}
-  | Factor {Factor $1}
+  : Term '*' Factor {$1 * $3}
+  | Term '/' Factor {$1 / $3}
+  | Factor {$1}
 
 Factor
-  : integer {Integer $1}
-  | '(' Sum ')' {Parens $2}
+  : rational {$1}
+  | '(' Sum ')' {$2}
 
 {
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
-data Stmt = Sum Sum deriving Show
-data Sum =
-  Plus Sum Term |
-  Minus Sum Term |
-  Term Term
-  deriving Show
-data Term =
-  Times Term Factor |
-  Div Term Factor |
-  Factor Factor
-  deriving Show
-data Factor =
-  Integer Integer |
-  Parens Sum
-  deriving Show
-
 data Token =
-  TokenInteger Integer |
+  TokenRational Rational |
   TokenPlus |
   TokenMinus |
   TokenStar |
@@ -66,7 +51,7 @@ data Token =
   deriving Show
 
 lexInteger :: String -> [Token]
-lexInteger cs = TokenInteger (read num):lexer rest
+lexInteger cs = TokenRational (toRational $ read num):lexer rest
   where (num,rest) = span isDigit cs
 
 lexer :: String -> [Token]
