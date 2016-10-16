@@ -59,6 +59,7 @@ lexer [] = []
 lexer (c:cs)
   | isSpace c = lexer cs
   | isDigit c = lexInteger (c:cs)
+  | c == '#' = lexer $ tail $ dropWhile (\x -> x /= '#') cs
 lexer ('+':cs) = TokenPlus:lexer cs
 lexer ('-':cs) = TokenMinus:lexer cs
 lexer ('*':cs) = TokenStar:lexer cs
