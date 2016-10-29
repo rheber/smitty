@@ -7,6 +7,7 @@ import Data.Ratio
 %name parseStmt
 %tokentype {Token}
 %error {parseError}
+%monad {E} {thenE} {returnE}
 
 %token
   rational {TokenRational $$}
@@ -36,8 +37,22 @@ Factor
   | '(' Sum ')' {$2}
 
 {
-parseError :: [Token] -> a
-parseError _ = error "Parse error"
+data E a = Ok a | Failed String
+instance Show a => Show (E a) where
+  show (Ok a) = show a
+  show (Failed e) = e
+
+thenE m k = case m of
+  Ok a -> k a
+  Failed e -> Failed e
+returnE a = Ok a
+failE err = Failed err
+catchE m k = case m of
+  Ok a -> Ok a
+  Failed e -> k e
+
+parseError :: [Token] -> E a
+parseError _ = failE "Parse error"
 
 data Value =
   ValBool {vBool :: Bool} |
