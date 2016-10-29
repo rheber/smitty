@@ -1,7 +1,7 @@
 {
 module Grammar where
 import Data.Char (isDigit, isSpace)
-import Data.Ratio (Rational, (%))
+import Data.Ratio
 }
 
 %name parseStmt
@@ -22,22 +22,29 @@ import Data.Ratio (Rational, (%))
 Stmt : Sum {$1}
 
 Sum
-  : Sum '+' Term {$1 + $3}
-  | Sum '-' Term {$1 - $3}
+  : Sum '+' Term {ValRat $ (vRat $1) + (vRat $3)}
+  | Sum '-' Term {ValRat $ (vRat $1) - (vRat $3)}
   | Term {$1}
 
 Term
-  : Term '*' Factor {$1 * $3}
-  | Term '/' Factor {$1 / $3}
+  : Term '*' Factor {ValRat $ (vRat $1) * (vRat $3)}
+  | Term '/' Factor {ValRat $ (vRat $1) / (vRat $3)}
   | Factor {$1}
 
 Factor
-  : rational {$1}
+  : rational {ValRat $1}
   | '(' Sum ')' {$2}
 
 {
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
+
+data Value =
+  ValBool {vBool :: Bool} |
+  ValRat {vRat :: Rational}
+
+instance Show Value where
+  show (ValRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
 
 data Token =
   TokenRational Rational |
