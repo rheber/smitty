@@ -11,6 +11,8 @@ import Data.Ratio
 
 %token
   rational {TokenRational $$}
+  ':(' {TokenFalse}
+  ':)' {TokenTrue}
   '+' {TokenPlus}
   '-' {TokenMinus}
   '*' {TokenStar}
@@ -33,8 +35,16 @@ Term
   | Factor {$1}
 
 Factor
+  : Atom {$1}
+
+Atom
   : rational {ValRat $1}
+  | Bool {$1}
   | '(' Sum ')' {$2}
+
+Bool
+  : ':(' {ValBool False}
+  | ':)' {ValBool True}
 
 {
 data E a = Ok a | Failed String
@@ -59,10 +69,14 @@ data Value =
   ValRat {vRat :: Rational}
 
 instance Show Value where
+  show (ValBool False) = ":("
+  show (ValBool True) = ":)"
   show (ValRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
 
 data Token =
   TokenRational Rational |
+  TokenFalse |
+  TokenTrue |
   TokenPlus |
   TokenMinus |
   TokenStar |
@@ -82,6 +96,8 @@ lexer (c:cs)
   | isSpace c = lexer cs
   | isDigit c = lexInteger (c:cs)
   | c == '#' = lexer $ tail $ dropWhile (\x -> x /= '#') cs
+lexer (':':'(':cs) = TokenFalse:lexer cs
+lexer (':':')':cs) = TokenTrue:lexer cs
 lexer ('+':cs) = TokenPlus:lexer cs
 lexer ('-':cs) = TokenMinus:lexer cs
 lexer ('*':cs) = TokenStar:lexer cs
