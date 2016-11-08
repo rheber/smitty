@@ -13,6 +13,8 @@ import Data.Ratio
   rational {TokenRational $$}
   ':(' {TokenFalse}
   ':)' {TokenTrue}
+  '||' {TokenOr}
+  '&&' {TokenAnd}
   '+' {TokenPlus}
   '-' {TokenMinus}
   '*' {TokenStar}
@@ -22,7 +24,15 @@ import Data.Ratio
 
 %%
 
-Stmt : Sum {$1}
+Stmt : Disj {$1}
+
+Disj
+  : Disj '||' Disj {ValBool $ (vBool $1) || (vBool $3)}
+  | Conj {$1}
+
+Conj
+  : Conj '&&' Conj {ValBool $ (vBool $1) && (vBool $3)}
+  | Sum {$1}
 
 Sum
   : Sum '+' Term {ValRat $ (vRat $1) + (vRat $3)}
@@ -40,7 +50,7 @@ Factor
 Atom
   : rational {ValRat $1}
   | Bool {$1}
-  | '(' Sum ')' {$2}
+  | '(' Stmt ')' {$2}
 
 Bool
   : ':(' {ValBool False}
@@ -77,6 +87,8 @@ data Token =
   TokenRational Rational |
   TokenFalse |
   TokenTrue |
+  TokenOr |
+  TokenAnd |
   TokenPlus |
   TokenMinus |
   TokenStar |
@@ -98,6 +110,8 @@ lexer (c:cs)
   | c == '#' = lexer $ tail $ dropWhile (\x -> x /= '#') cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
 lexer (':':')':cs) = TokenTrue:lexer cs
+lexer ('|':'|':cs) = TokenOr:lexer cs
+lexer ('&':'&':cs) = TokenAnd:lexer cs
 lexer ('+':cs) = TokenPlus:lexer cs
 lexer ('-':cs) = TokenMinus:lexer cs
 lexer ('*':cs) = TokenStar:lexer cs
