@@ -27,11 +27,11 @@ import Data.Ratio
 Stmt : Disj {$1}
 
 Disj
-  : Disj '||' Disj {ValBool $ (vBool $1) || (vBool $3)}
+  : Disj '||' Conj {ValBool $ (vBool $1) || (vBool $3)}
   | Conj {$1}
 
 Conj
-  : Conj '&&' Conj {ValBool $ (vBool $1) && (vBool $3)}
+  : Conj '&&' Sum {ValBool $ (vBool $1) && (vBool $3)}
   | Sum {$1}
 
 Sum
