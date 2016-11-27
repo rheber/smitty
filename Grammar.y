@@ -24,37 +24,36 @@ import Data.Ratio
 
 %%
 
-Stmt : Disj {$1}
+Stmt :: {String}
+  : Disj {show $1}
+  | Sum {show $1}
 
-Disj
+Disj :: {ValBool}
   : Disj '||' Conj {ValBool $ (vBool $1) || (vBool $3)}
   | Conj {$1}
 
-Conj
-  : Conj '&&' Sum {ValBool $ (vBool $1) && (vBool $3)}
-  | Sum {$1}
+Conj :: {ValBool}
+  : Conj '&&' Bool {ValBool $ (vBool $1) && (vBool $3)}
+  | Bool {$1}
 
-Sum
+Sum :: {ValRat}
   : Sum '+' Term {ValRat $ (vRat $1) + (vRat $3)}
   | Sum '-' Term {ValRat $ (vRat $1) - (vRat $3)}
   | Term {$1}
 
-Term
-  : Term '*' Factor {ValRat $ (vRat $1) * (vRat $3)}
-  | Term '/' Factor {ValRat $ (vRat $1) / (vRat $3)}
-  | Factor {$1}
+Term :: {ValRat}
+  : Term '*' Rat {ValRat $ (vRat $1) * (vRat $3)}
+  | Term '/' Rat {ValRat $ (vRat $1) / (vRat $3)}
+  | Rat {$1}
 
-Factor
-  : Atom {$1}
-
-Atom
+Rat :: {ValRat}
   : rational {ValRat $1}
-  | Bool {$1}
-  | '(' Stmt ')' {$2}
+  | '(' Sum ')' {$2}
 
-Bool
+Bool :: {ValBool}
   : ':(' {ValBool False}
   | ':)' {ValBool True}
+  | '(' Disj ')' {$2}
 
 {
 data E a = Ok a | Failed String
@@ -74,13 +73,13 @@ catchE m k = case m of
 parseError :: [Token] -> E a
 parseError _ = failE "Parse error"
 
-data Value =
-  ValBool {vBool :: Bool} |
-  ValRat {vRat :: Rational}
+data ValBool = ValBool {vBool :: Bool}
+data ValRat =  ValRat {vRat :: Rational}
 
-instance Show Value where
+instance Show ValBool where
   show (ValBool False) = ":("
   show (ValBool True) = ":)"
+instance Show ValRat where
   show (ValRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
 
 data Token =
