@@ -24,9 +24,9 @@ import Data.Ratio
 
 %%
 
-Stmt :: {String}
-  : Disj {show $1}
-  | Sum {show $1}
+Stmt :: {Value}
+  : Disj {ValueBool $1}
+  | Sum {ValueRat $1}
 
 Disj :: {ValBool}
   : Disj '||' Conj {ValBool $ (vBool $1) || (vBool $3)}
@@ -73,9 +73,13 @@ catchE m k = case m of
 parseError :: [Token] -> E a
 parseError _ = failE "Parse error"
 
+data Value = ValueBool ValBool | ValueRat ValRat
 data ValBool = ValBool {vBool :: Bool}
 data ValRat =  ValRat {vRat :: Rational}
 
+instance Show Value where
+  show (ValueBool v) = show v
+  show (ValueRat v) = show v
 instance Show ValBool where
   show (ValBool False) = ":("
   show (ValBool True) = ":)"
