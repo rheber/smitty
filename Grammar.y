@@ -1,6 +1,6 @@
 {
 module Grammar where
-import Data.Char (isDigit, isSpace)
+import Data.Char (isAlphaNum, isDigit, isLetter, isSpace)
 import Data.Ratio
 }
 
@@ -10,7 +10,9 @@ import Data.Ratio
 %monad {E} {thenE} {returnE}
 
 %token
+  identifier {TokenIdfr $$}
   rational {TokenRational $$}
+  '::=' {TokenAssign}
   ':(' {TokenFalse}
   ':)' {TokenTrue}
   '||' {TokenOr}
@@ -27,6 +29,7 @@ import Data.Ratio
 Stmt :: {Value}
   : Disj {ValueBool $1}
   | Sum {ValueRat $1}
+  | Idfr {ValueIdfr $1}
 
 Disj :: {ValBool}
   : Disj '||' Conj {ValBool $ (vBool $1) || (vBool $3)}
@@ -45,6 +48,9 @@ Term :: {ValRat}
   : Term '*' Rat {ValRat $ (vRat $1) * (vRat $3)}
   | Term '/' Rat {ValRat $ (vRat $1) / (vRat $3)}
   | Rat {$1}
+
+Idfr
+  : identifier {ValIdfr $1}
 
 Rat :: {ValRat}
   : rational {ValRat $1}
@@ -73,13 +79,17 @@ catchE m k = case m of
 parseError :: [Token] -> E a
 parseError _ = failE "Parse error"
 
-data Value = ValueBool ValBool | ValueRat ValRat
+data Value = ValueBool ValBool | ValueRat ValRat | ValueIdfr ValIdfr
+data ValIdfr = ValIdfr {vIdfr :: String}
 data ValBool = ValBool {vBool :: Bool}
 data ValRat =  ValRat {vRat :: Rational}
 
 instance Show Value where
+  show (ValueIdfr v) = show v
   show (ValueBool v) = show v
   show (ValueRat v) = show v
+instance Show ValIdfr where
+  show (ValIdfr v) = show v
 instance Show ValBool where
   show (ValBool False) = ":("
   show (ValBool True) = ":)"
@@ -87,7 +97,9 @@ instance Show ValRat where
   show (ValRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
 
 data Token =
+  TokenIdfr String |
   TokenRational Rational |
+  TokenAssign |
   TokenFalse |
   TokenTrue |
   TokenOr |
@@ -101,6 +113,11 @@ data Token =
   InvalidToken
   deriving Show
 
+lexIdfr :: String -> [Token]
+lexIdfr cs =
+  case span isAlphaNum cs of
+    (idfr, rest) -> TokenIdfr idfr:lexer rest
+
 lexInteger :: String -> [Token]
 lexInteger cs = TokenRational (toRational $ read num):lexer rest
   where (num,rest) = span isDigit cs
@@ -109,8 +126,10 @@ lexer :: String -> [Token]
 lexer [] = []
 lexer (c:cs)
   | isSpace c = lexer cs
+  | isLetter c = lexIdfr (c:cs)
   | isDigit c = lexInteger (c:cs)
   | c == '#' = lexer $ tail $ dropWhile (\x -> x /= '#') cs
+lexer (':':':':'=':cs) = TokenAssign:lexer cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
 lexer (':':')':cs) = TokenTrue:lexer cs
 lexer ('|':'|':cs) = TokenOr:lexer cs
