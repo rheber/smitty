@@ -26,10 +26,10 @@ import Data.Ratio
 
 %%
 
-Stmt :: {Value}
-  : Disj {ValueBool $1}
-  | Sum {ValueRat $1}
-  | Idfr {ValueIdfr $1}
+Stmt :: {Env -> Value}
+  : Disj {\p -> ValueBool $1}
+  | Sum {\p -> ValueRat $1}
+  | Idfr {\p -> ValueIdfr $1}
 
 Disj :: {ValBool}
   : Disj '||' Conj {ValBool $ (vBool $1) || (vBool $3)}
@@ -63,6 +63,17 @@ Bool :: {ValBool}
 
 {
 data E a = Ok a | Failed String
+instance Functor E where
+  fmap f u = case u of
+    Ok a -> Ok $ f a
+    Failed s -> Failed s
+instance Applicative E where
+  pure a = Ok a
+  f <*> u = case u of
+    Ok a -> case f of
+      Ok g -> Ok $ g a
+      Failed s -> Failed s
+    Failed s -> Failed s
 instance Show a => Show (E a) where
   show (Ok a) = show a
   show (Failed e) = e
@@ -78,6 +89,9 @@ catchE m k = case m of
 
 parseError :: [Token] -> E a
 parseError _ = failE "Parse error"
+
+data Env = Env
+dummyEnv = Ok Env
 
 data Value = ValueBool ValBool | ValueRat ValRat | ValueIdfr ValIdfr
 data ValIdfr = ValIdfr {vIdfr :: String}
