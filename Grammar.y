@@ -31,7 +31,7 @@ Stmt :: {Env -> Value}
   : Asgn {\p -> $1}
   | Disj {\p -> ValueBool $1}
   | Sum {\p -> ValueRat $1}
-  | Idfr {\p -> ValueIdfr $1}
+  | Idfr {\p -> varLookup $1 p}
 
 Asgn :: {Value}
   : Idfr '::=' Disj {ValueAsgn $1 $ ValueBool $3}
@@ -93,24 +93,28 @@ catchE m k = case m of
   Ok a -> Ok a
   Failed e -> k e
 
+unwrapE e = case e of
+  Ok a -> a
+
 parseError :: [Token] -> E a
 parseError _ = failE "Parse error"
 
 type Env = Map.Map String Value
 
+varLookup :: String -> Env -> Value
+varLookup name e = Map.findWithDefault (ValueBool $ ValBool False) name e
+
 data Value
   = ValueBool ValBool
   | ValueRat ValRat
-  | ValueIdfr String
   | ValueAsgn String Value
 data ValBool = ValBool {vBool :: Bool}
 data ValRat =  ValRat {vRat :: Rational}
 
 instance Show Value where
-  show (ValueIdfr v) = v
+  show (ValueAsgn _ v) = show v
   show (ValueBool v) = show v
   show (ValueRat v) = show v
-  show (ValueAsgn u v) = u
 instance Show ValBool where
   show (ValBool False) = ":("
   show (ValBool True) = ":)"
