@@ -1,6 +1,7 @@
 {
 module Grammar where
 import Data.Char (isAlphaNum, isDigit, isLetter, isSpace)
+import Data.Map as Map
 import Data.Ratio
 }
 
@@ -33,8 +34,8 @@ Stmt :: {Env -> Value}
   | Idfr {\p -> ValueIdfr $1}
 
 Asgn :: {Value}
-  : Idfr '::=' Disj {ValueBool $3}
-  | Idfr '::=' Sum {ValueRat $3}
+  : Idfr '::=' Disj {ValueAsgn $1 $ ValueBool $3}
+  | Idfr '::=' Sum {ValueAsgn $1 $ ValueRat $3}
 
 Disj :: {ValBool}
   : Disj '||' Conj {ValBool $ (vBool $1) || (vBool $3)}
@@ -55,7 +56,7 @@ Term :: {ValRat}
   | Rat {$1}
 
 Idfr
-  : identifier {ValIdfr $1}
+  : identifier {$1}
 
 Rat :: {ValRat}
   : rational {ValRat $1}
@@ -95,20 +96,21 @@ catchE m k = case m of
 parseError :: [Token] -> E a
 parseError _ = failE "Parse error"
 
-data Env = Env
-dummyEnv = Ok Env
+type Env = Map.Map String Value
 
-data Value = ValueBool ValBool | ValueRat ValRat | ValueIdfr ValIdfr
-data ValIdfr = ValIdfr {vIdfr :: String}
+data Value
+  = ValueBool ValBool
+  | ValueRat ValRat
+  | ValueIdfr String
+  | ValueAsgn String Value
 data ValBool = ValBool {vBool :: Bool}
 data ValRat =  ValRat {vRat :: Rational}
 
 instance Show Value where
-  show (ValueIdfr v) = show v
+  show (ValueIdfr v) = v
   show (ValueBool v) = show v
   show (ValueRat v) = show v
-instance Show ValIdfr where
-  show (ValIdfr v) = show v
+  show (ValueAsgn u v) = u
 instance Show ValBool where
   show (ValBool False) = ":("
   show (ValBool True) = ":)"
