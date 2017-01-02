@@ -27,9 +27,14 @@ import Data.Ratio
 %%
 
 Stmt :: {Env -> Value}
-  : Disj {\p -> ValueBool $1}
+  : Asgn {\p -> $1}
+  | Disj {\p -> ValueBool $1}
   | Sum {\p -> ValueRat $1}
   | Idfr {\p -> ValueIdfr $1}
+
+Asgn :: {Value}
+  : Idfr '::=' Disj {ValueBool $3}
+  | Idfr '::=' Sum {ValueRat $3}
 
 Disj :: {ValBool}
   : Disj '||' Conj {ValBool $ (vBool $1) || (vBool $3)}
