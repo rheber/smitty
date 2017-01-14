@@ -93,9 +93,6 @@ catchE m k = case m of
   Ok a -> Ok a
   Failed e -> k e
 
-unwrapE e = case e of
-  Ok a -> a
-
 parseError :: [Token] -> E a
 parseError _ = failE "Parse error"
 
