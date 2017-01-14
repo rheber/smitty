@@ -29,43 +29,47 @@ import Data.Ratio
 
 Stmt :: {Env -> Value}
   : Asgn {\p -> $1}
-  | Disj {\p -> ValueBool $1}
-  | Sum {\p -> ValueRat $1}
-  | Idfr {\p -> varLookup $1 p}
+  | Disj {\p -> $1}
+  | IdfrVal {$1}
 
 Asgn :: {Value}
-  : Idfr '::=' Disj {ValueAsgn $1 $ ValueBool $3}
-  | Idfr '::=' Sum {ValueAsgn $1 $ ValueRat $3}
+  : Idfr '::=' Disj {ValueAsgn $1 $3}
 
-Disj :: {ValBool}
-  : Disj '||' Conj {ValBool $ (vBool $1) || (vBool $3)}
+Disj :: {Value}
+  : Disj '||' Conj {ValueBool $ (vBool $1) || (vBool $3)}
   | Conj {$1}
 
-Conj :: {ValBool}
-  : Conj '&&' Bool {ValBool $ (vBool $1) && (vBool $3)}
-  | Bool {$1}
+Conj :: {Value}
+  : Conj '&&' Bool {ValueBool $ (vBool $1) && (vBool $3)}
+  | Sum {$1}
 
-Sum :: {ValRat}
-  : Sum '+' Term {ValRat $ (vRat $1) + (vRat $3)}
-  | Sum '-' Term {ValRat $ (vRat $1) - (vRat $3)}
+Sum :: {Value}
+  : Sum '+' Term {ValueRat $ (vRat $1) + (vRat $3)}
+  | Sum '-' Term {ValueRat $ (vRat $1) - (vRat $3)}
   | Term {$1}
 
-Term :: {ValRat}
-  : Term '*' Rat {ValRat $ (vRat $1) * (vRat $3)}
-  | Term '/' Rat {ValRat $ (vRat $1) / (vRat $3)}
-  | Rat {$1}
+Term :: {Value}
+  : Term '*' Rat {ValueRat $ (vRat $1) * (vRat $3)}
+  | Term '/' Rat {ValueRat $ (vRat $1) / (vRat $3)}
+  | Atom {$1}
 
-Idfr
+IdfrVal :: {Env -> Value}
+  : Idfr {\p -> varLookup $1 p}
+
+Idfr :: {String}
   : identifier {$1}
 
-Rat :: {ValRat}
-  : rational {ValRat $1}
-  | '(' Sum ')' {$2}
-
-Bool :: {ValBool}
-  : ':(' {ValBool False}
-  | ':)' {ValBool True}
+Atom :: {Value}
+  : Bool {$1}
+  | Rat {$1}
   | '(' Disj ')' {$2}
+
+Rat :: {Value}
+  : rational {ValueRat $1}
+
+Bool :: {Value}
+  : ':(' {ValueBool False}
+  | ':)' {ValueBool True}
 
 {
 data E a = Ok a | Failed String
@@ -99,24 +103,18 @@ parseError _ = failE "Parse error"
 type Env = Map.Map String Value
 
 varLookup :: String -> Env -> Value
-varLookup name e = Map.findWithDefault (ValueBool $ ValBool False) name e
+varLookup name e = Map.findWithDefault (ValueBool False) name e
 
 data Value
-  = ValueBool ValBool
-  | ValueRat ValRat
+  = ValueBool {vBool :: Bool}
+  | ValueRat {vRat :: Rational}
   | ValueAsgn String Value
-data ValBool = ValBool {vBool :: Bool}
-data ValRat =  ValRat {vRat :: Rational}
 
 instance Show Value where
   show (ValueAsgn _ v) = show v
-  show (ValueBool v) = show v
-  show (ValueRat v) = show v
-instance Show ValBool where
-  show (ValBool False) = ":("
-  show (ValBool True) = ":)"
-instance Show ValRat where
-  show (ValRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
+  show (ValueBool False) = ":("
+  show (ValueBool True) = ":)"
+  show (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
 
 data Token =
   TokenIdfr String |
