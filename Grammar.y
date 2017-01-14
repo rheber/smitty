@@ -28,29 +28,28 @@ import Data.Ratio
 %%
 
 Stmt :: {Env -> Value}
-  : Asgn {\p -> $1}
-  | Disj {\p -> $1}
-  | IdfrVal {$1}
+  : Asgn {$1}
 
-Asgn :: {Value}
-  : Idfr '::=' Disj {ValueAsgn $1 $3}
+Asgn :: {Env -> Value}
+  : Idfr '::=' Disj {\p -> ValueAsgn $1 $ $3 p}
+  | Disj {$1}
 
-Disj :: {Value}
-  : Disj '||' Conj {ValueBool $ (vBool $1) || (vBool $3)}
+Disj :: {Env -> Value}
+  : Disj '||' Conj {\p -> ValueBool $ (vBool $ $1 p) || (vBool $ $3 p)}
   | Conj {$1}
 
-Conj :: {Value}
-  : Conj '&&' Bool {ValueBool $ (vBool $1) && (vBool $3)}
+Conj :: {Env -> Value}
+  : Conj '&&' Sum {\p -> ValueBool $ (vBool $ $1 p) && (vBool $ $3 p)}
   | Sum {$1}
 
-Sum :: {Value}
-  : Sum '+' Term {ValueRat $ (vRat $1) + (vRat $3)}
-  | Sum '-' Term {ValueRat $ (vRat $1) - (vRat $3)}
+Sum :: {Env -> Value}
+  : Sum '+' Term {\p -> ValueRat $ (vRat $ $1 p) + (vRat $ $3 p)}
+  | Sum '-' Term {\p -> ValueRat $ (vRat $ $1 p) - (vRat $ $3 p)}
   | Term {$1}
 
-Term :: {Value}
-  : Term '*' Rat {ValueRat $ (vRat $1) * (vRat $3)}
-  | Term '/' Rat {ValueRat $ (vRat $1) / (vRat $3)}
+Term :: {Env -> Value}
+  : Term '*' Atom {\p -> ValueRat $ (vRat $ $1 p) * (vRat $ $3 p)}
+  | Term '/' Atom {\p -> ValueRat $ (vRat $ $1 p) / (vRat $ $3 p)}
   | Atom {$1}
 
 IdfrVal :: {Env -> Value}
@@ -59,9 +58,10 @@ IdfrVal :: {Env -> Value}
 Idfr :: {String}
   : identifier {$1}
 
-Atom :: {Value}
-  : Bool {$1}
-  | Rat {$1}
+Atom :: {Env -> Value}
+  : Bool {\p -> $1}
+  | Rat {\p -> $1}
+  | IdfrVal {$1}
   | '(' Disj ')' {$2}
 
 Rat :: {Value}
