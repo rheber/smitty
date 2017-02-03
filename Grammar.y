@@ -1,7 +1,6 @@
 {
 module Grammar where
 import Data.Char (isAlphaNum, isDigit, isLetter, isSpace)
-import Data.Map as Map
 import Data.Ratio
 }
 
@@ -27,41 +26,38 @@ import Data.Ratio
 
 %%
 
-Stmt :: {Env -> Value}
+Stmt :: {Value}
   : Asgn {$1}
 
-Asgn :: {Env -> Value}
-  : Idfr '::=' Disj {\p -> ValueAsgn $1 $ $3 p}
+Asgn :: {Value}
+  : identifier '::=' Disj {ValueAsgn $1 $3}
   | Disj {$1}
 
-Disj :: {Env -> Value}
-  : Disj '||' Conj {\p -> ValueBool $ (vBool $ $1 p) || (vBool $ $3 p)}
+Disj :: {Value}
+  : Disj '||' Conj {ValueOp "||" $1 $3}
   | Conj {$1}
 
-Conj :: {Env -> Value}
-  : Conj '&&' Sum {\p -> ValueBool $ (vBool $ $1 p) && (vBool $ $3 p)}
+Conj :: {Value}
+  : Conj '&&' Sum {ValueOp "&&" $1 $3}
   | Sum {$1}
 
-Sum :: {Env -> Value}
-  : Sum '+' Term {\p -> ValueRat $ (vRat $ $1 p) + (vRat $ $3 p)}
-  | Sum '-' Term {\p -> ValueRat $ (vRat $ $1 p) - (vRat $ $3 p)}
+Sum :: {Value}
+  : Sum '+' Term {ValueOp "+" $1 $3}
+  | Sum '-' Term {ValueOp "-" $1 $3}
   | Term {$1}
 
-Term :: {Env -> Value}
-  : Term '*' Atom {\p -> ValueRat $ (vRat $ $1 p) * (vRat $ $3 p)}
-  | Term '/' Atom {\p -> ValueRat $ (vRat $ $1 p) / (vRat $ $3 p)}
+Term :: {Value}
+  : Term '*' Atom {ValueOp "*" $1 $3}
+  | Term '/' Atom {ValueOp "/" $1 $3}
   | Atom {$1}
 
-IdfrVal :: {Env -> Value}
-  : Idfr {\p -> varLookup $1 p}
+Idfr :: {Value}
+  : identifier {ValueIdfr $1}
 
-Idfr :: {String}
-  : identifier {$1}
-
-Atom :: {Env -> Value}
-  : Bool {\p -> $1}
-  | Rat {\p -> $1}
-  | IdfrVal {$1}
+Atom :: {Value}
+  : Bool {$1}
+  | Rat {$1}
+  | Idfr {$1}
   | '(' Disj ')' {$2}
 
 Rat :: {Value}
@@ -100,21 +96,21 @@ catchE m k = case m of
 parseError :: [Token] -> E a
 parseError _ = failE "Parse error"
 
-type Env = Map.Map String Value
-
-varLookup :: String -> Env -> Value
-varLookup name e = Map.findWithDefault (ValueBool False) name e
-
 data Value
   = ValueBool {vBool :: Bool}
   | ValueRat {vRat :: Rational}
-  | ValueAsgn String Value
+  | ValueIdfr {vIdfr :: String}
+  | ValueAsgn {vLHS :: String, vRHS :: Value}
+  | ValueOp String Value Value
+  | ValueOper {vOper :: (Value -> Value -> Value)}
+  | ValueFailure String
 
 instance Show Value where
   show (ValueAsgn _ v) = show v
   show (ValueBool False) = ":("
   show (ValueBool True) = ":)"
   show (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
+  show (ValueFailure s) = s
 
 data Token =
   TokenIdfr String |
