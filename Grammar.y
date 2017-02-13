@@ -7,7 +7,7 @@ import Data.Ratio
 %name parseStmt
 %tokentype {Token}
 %error {parseError}
-%monad {E} {thenE} {returnE}
+%monad {E} {(>>=)} {return}
 
 %token
   identifier {TokenIdfr $$}
@@ -82,21 +82,16 @@ instance Applicative E where
       Ok g -> Ok $ g a
       Failed s -> Failed s
     Failed s -> Failed s
+instance Monad E where
+  return = Ok
+  m >>= k = case m of
+    Ok a -> k a
+    Failed e -> Failed e
 instance Show a => Show (E a) where
   show (Ok a) = show a
   show (Failed e) = e
-
-thenE m k = case m of
-  Ok a -> k a
-  Failed e -> Failed e
-returnE a = Ok a
-failE err = Failed err
-catchE m k = case m of
-  Ok a -> Ok a
-  Failed e -> k e
-
 parseError :: [Token] -> E a
-parseError _ = failE "Parse error"
+parseError _ = Failed "Parse error"
 
 data Value
   = ValueBool {vBool :: Bool}
