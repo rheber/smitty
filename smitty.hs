@@ -7,7 +7,8 @@ import Grammar(E(..), Value(..), lexer, parseStmt)
 type Env = Map.Map String Value
 
 varLookup :: String -> Env -> Value
-varLookup name e = Map.findWithDefault (ValueBool False) name e
+varLookup name e = Map.findWithDefault
+  (ValueFailure "Error: Variable used before initialised") name e
 
 valuiseBool :: (Bool -> Bool -> Bool) -> (Value -> Value -> Value)
 valuiseBool f (ValueBool a) (ValueBool b) = ValueBool $ f a b
@@ -31,7 +32,12 @@ initialEnv = Map.fromList [("||", ValueOper $ valuiseBool (||)),
 -- Potentially perform assignment.
 handleAsgn :: Value -> Env -> Env
 handleAsgn v e = case v of
-  ValueAsgn name value -> Map.insert name value e
+  ValueReasgn name value -> case value of
+    ValueFailure _ -> e
+    _ -> if member name e then Map.insert name value e else e
+  ValueInit name value -> case value of
+    ValueFailure _ -> e
+    _ -> if member name e then e else Map.insert name value e
   _ -> e
 
 evalIfOk :: Env -> E Value -> Value
@@ -40,7 +46,14 @@ evalIfOk e v = case v of
   Failed s -> ValueFailure "Syntax error"
 
 eval :: Env -> Value -> Value
-eval e (ValueAsgn a b) = ValueAsgn a $ eval e b
+eval e (ValueReasgn a b) =
+  if member a e
+  then ValueReasgn a $ eval e b
+  else ValueFailure "Error: Variable not initialised"
+eval e (ValueInit a b) =
+  if member a e
+  then ValueFailure "Error: Variable already initialised"
+  else ValueInit a $ eval e b
 eval e (ValueIdfr a) = varLookup a e
 eval e (ValueOp a b c) = (vOper $ varLookup a e) (eval e b) $ eval e c
 eval _ v = v

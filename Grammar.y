@@ -12,7 +12,8 @@ import Data.Ratio
 %token
   identifier {TokenIdfr $$}
   rational {TokenRational $$}
-  '::=' {TokenAssign}
+  '::=' {TokenReassign}
+  ':=' {TokenInit}
   ':(' {TokenFalse}
   ':)' {TokenTrue}
   '||' {TokenOr}
@@ -30,7 +31,8 @@ Stmt :: {Value}
   : Asgn {$1}
 
 Asgn :: {Value}
-  : identifier '::=' Disj {ValueAsgn $1 $3}
+  : identifier '::=' Disj {ValueReasgn $1 $3}
+  | identifier ':=' Disj {ValueInit $1 $3}
   | Disj {$1}
 
 Disj :: {Value}
@@ -100,13 +102,15 @@ data Value
   = ValueBool {vBool :: Bool}
   | ValueRat {vRat :: Rational}
   | ValueIdfr {vIdfr :: String}
-  | ValueAsgn {vLHS :: String, vRHS :: Value}
+  | ValueReasgn {vLHS :: String, vRHS :: Value}
+  | ValueInit {vLHS :: String, vRHS :: Value}
   | ValueOp String Value Value
   | ValueOper {vOper :: (Value -> Value -> Value)}
   | ValueFailure String
 
 instance Show Value where
-  show (ValueAsgn _ v) = show v
+  show (ValueReasgn _ v) = show v
+  show (ValueInit _ v) = show v
   show (ValueBool False) = ":("
   show (ValueBool True) = ":)"
   show (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
@@ -115,7 +119,8 @@ instance Show Value where
 data Token =
   TokenIdfr String |
   TokenRational Rational |
-  TokenAssign |
+  TokenReassign |
+  TokenInit |
   TokenFalse |
   TokenTrue |
   TokenOr |
@@ -145,7 +150,8 @@ lexer (c:cs)
   | isLetter c = lexIdfr (c:cs)
   | isDigit c = lexInteger (c:cs)
   | c == '#' = lexer $ tail $ dropWhile (\x -> x /= '#') cs
-lexer (':':':':'=':cs) = TokenAssign:lexer cs
+lexer (':':':':'=':cs) = TokenReassign:lexer cs
+lexer (':':'=':cs) = TokenInit:lexer cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
 lexer (':':')':cs) = TokenTrue:lexer cs
 lexer ('|':'|':cs) = TokenOr:lexer cs
