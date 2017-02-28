@@ -55,7 +55,9 @@ eval e (ValueInit a b) =
   then ValueFailure "Error: Variable already initialised"
   else ValueInit a $ eval e b
 eval e (ValueIdfr a) = varLookup a e
-eval e (ValueOp a b c) = (vOper $ varLookup a e) (eval e b) $ eval e c
+eval e (ValueOp a b c) = case varLookup a e of
+  ValueFailure _ -> ValueFailure "Error: Undefined operator"
+  op -> (vOper op) (eval e b) $ eval e c
 eval _ v = v
 
 repl :: Env -> IO ()
