@@ -12,16 +12,14 @@ import Data.Ratio
 %token
   identifier {TokenIdfr $$}
   rational {TokenRational $$}
+  disjOp {TokenDisjOp $$}
+  conjOp {TokenConjOp $$}
+  sumOp {TokenSumOp $$}
+  termOp {TokenTermOp $$}
   '::=' {TokenReassign}
   ':=' {TokenInit}
   ':(' {TokenFalse}
   ':)' {TokenTrue}
-  '||' {TokenOr}
-  '&&' {TokenAnd}
-  '+' {TokenPlus}
-  '-' {TokenMinus}
-  '*' {TokenStar}
-  '/' {TokenFS}
   '(' {TokenOP}
   ')' {TokenCP}
 
@@ -36,21 +34,19 @@ Asgn :: {Value}
   | Disj {$1}
 
 Disj :: {Value}
-  : Disj '||' Conj {ValueOp "||" $1 $3}
+  : Disj disjOp Conj {ValueOp $2 $1 $3}
   | Conj {$1}
 
 Conj :: {Value}
-  : Conj '&&' Sum {ValueOp "&&" $1 $3}
+  : Conj conjOp Sum {ValueOp $2 $1 $3}
   | Sum {$1}
 
 Sum :: {Value}
-  : Sum '+' Term {ValueOp "+" $1 $3}
-  | Sum '-' Term {ValueOp "-" $1 $3}
+  : Sum sumOp Term {ValueOp $2 $1 $3}
   | Term {$1}
 
 Term :: {Value}
-  : Term '*' Atom {ValueOp "*" $1 $3}
-  | Term '/' Atom {ValueOp "/" $1 $3}
+  : Term termOp Atom {ValueOp $2 $1 $3}
   | Atom {$1}
 
 Idfr :: {Value}
@@ -118,12 +114,10 @@ data Token =
   TokenInit |
   TokenFalse |
   TokenTrue |
-  TokenOr |
-  TokenAnd |
-  TokenPlus |
-  TokenMinus |
-  TokenStar |
-  TokenFS |
+  TokenDisjOp String |
+  TokenConjOp String |
+  TokenSumOp String |
+  TokenTermOp String |
   TokenOP |
   TokenCP |
   InvalidToken
@@ -138,23 +132,32 @@ lexInteger :: String -> [Token]
 lexInteger cs = TokenRational (toRational $ read num):lexer rest
   where (num,rest) = span isDigit cs
 
+lexOp :: String -> [Token]
+lexOp s@(c:_) = case span isOpchar s of
+  (op, rest) -> case c of
+    '|' -> TokenDisjOp op:lexer rest
+    '&' -> TokenConjOp op:lexer rest
+    '+' -> TokenSumOp op:lexer rest
+    '-' -> TokenSumOp op:lexer rest
+    '/' -> TokenTermOp op:lexer rest
+    '%' -> TokenTermOp op:lexer rest
+
+opchars = ".|&=!<>+-*/%"
+isOpchar :: Char -> Bool
+isOpchar c = elem c opchars
+
 lexer :: String -> [Token]
 lexer [] = []
 lexer (c:cs)
   | isSpace c = lexer cs
   | isLetter c = lexIdfr (c:cs)
   | isDigit c = lexInteger (c:cs)
+  | isOpchar c = lexOp (c:cs)
   | c == '#' = lexer $ tail $ dropWhile (\x -> x /= '#') cs
 lexer (':':':':'=':cs) = TokenReassign:lexer cs
 lexer (':':'=':cs) = TokenInit:lexer cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
 lexer (':':')':cs) = TokenTrue:lexer cs
-lexer ('|':'|':cs) = TokenOr:lexer cs
-lexer ('&':'&':cs) = TokenAnd:lexer cs
-lexer ('+':cs) = TokenPlus:lexer cs
-lexer ('-':cs) = TokenMinus:lexer cs
-lexer ('*':cs) = TokenStar:lexer cs
-lexer ('/':cs) = TokenFS:lexer cs
 lexer ('(':cs) = TokenOP:lexer cs
 lexer (')':cs) = TokenCP:lexer cs
 lexer _ = InvalidToken:[]
