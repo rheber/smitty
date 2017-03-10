@@ -14,6 +14,7 @@ import Data.Ratio
   rational {TokenRational $$}
   disjOp {TokenDisjOp $$}
   conjOp {TokenConjOp $$}
+  cmpOp {TokenCmpOp $$}
   sumOp {TokenSumOp $$}
   termOp {TokenTermOp $$}
   '::=' {TokenReassign}
@@ -38,7 +39,11 @@ Disj :: {Value}
   | Conj {$1}
 
 Conj :: {Value}
-  : Conj conjOp Sum {ValueOp $2 $1 $3}
+  : Conj conjOp Cmp {ValueOp $2 $1 $3}
+  | Cmp {$1}
+
+Cmp :: {Value}
+  : Cmp cmpOp Sum {ValueOp $2 $1 $3}
   | Sum {$1}
 
 Sum :: {Value}
@@ -99,6 +104,20 @@ data Value
   | ValueOper {vOper :: (Value -> Value -> Value)}
   | ValueFailure String
 
+instance Eq Value where
+  (ValueBool a) == (ValueBool b) = a == b
+  (ValueRat a) == (ValueRat b) = a == b
+  _ == _ = False
+instance Ord Value where
+  (ValueRat a) <= (ValueRat b) = a <= b
+  u <= v = u == v
+  (ValueRat a) >= (ValueRat b) = a >= b
+  u >= v = u == v
+  (ValueRat a) < (ValueRat b) = a < b
+  _ < _ = False
+  (ValueRat a) > (ValueRat b) = a > b
+  _ > _ = False
+
 instance Show Value where
   show (ValueReasgn _ v) = show v
   show (ValueInit _ v) = show v
@@ -116,6 +135,7 @@ data Token =
   TokenTrue |
   TokenDisjOp String |
   TokenConjOp String |
+  TokenCmpOp String |
   TokenSumOp String |
   TokenTermOp String |
   TokenOP |
@@ -137,6 +157,10 @@ lexOp s@(c:_) = case span isOpchar s of
   (op, rest) -> case c of
     '|' -> TokenDisjOp op:lexer rest
     '&' -> TokenConjOp op:lexer rest
+    '=' -> TokenCmpOp op:lexer rest
+    '!' -> TokenCmpOp op:lexer rest
+    '<' -> TokenCmpOp op:lexer rest
+    '>' -> TokenCmpOp op:lexer rest
     '+' -> TokenSumOp op:lexer rest
     '-' -> TokenSumOp op:lexer rest
     '/' -> TokenTermOp op:lexer rest
