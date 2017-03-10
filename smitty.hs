@@ -17,6 +17,12 @@ valuiseRat :: (Rational -> Rational -> Rational) -> (Value -> Value -> Value)
 valuiseRat f (ValueRat a) (ValueRat b) = ValueRat $ f a b
 valuiseRat f _ _ = ValueFailure "Type error: Expected rationals"
 
+-- Like valuiseRat but specially handle zero.
+valuiseNonzero :: (Rational -> Rational -> Rational) -> (Value -> Value -> Value)
+valuiseNonzero f _ (ValueRat 0) = ValueFailure "Error: Zero argument"
+valuiseNonzero f (ValueRat a) (ValueRat b) = ValueRat $ f a b
+valuiseNonzero f _ _ = ValueFailure "Type error: Expected rationals"
+
 emptyEnv :: Env
 emptyEnv = Map.empty
 
@@ -27,7 +33,7 @@ initialEnv = Map.fromList [("||", ValueOper $ valuiseBool (||)),
   ("+", ValueOper $ valuiseRat (+)),
   ("-", ValueOper $ valuiseRat (-)),
   ("*", ValueOper $ valuiseRat (*)),
-  ("/", ValueOper $ valuiseRat (/))]
+  ("/", ValueOper $ valuiseNonzero (/))]
 
 -- Potentially perform assignment.
 handleAsgn :: Value -> Env -> Env
