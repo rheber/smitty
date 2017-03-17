@@ -26,23 +26,28 @@ valuiseNonzero f _ (ValueRat 0) = ValueFailure "Error: Zero argument"
 valuiseNonzero f (ValueRat a) (ValueRat b) = ValueRat $ f a b
 valuiseNonzero f _ _ = ValueFailure "Type error: Expected rationals"
 
+valuisedNeg :: Value -> Value
+valuisedNeg (ValueBool a) = (ValueBool $ not a)
+valuisedNeg _ = ValueFailure "Type error: Expected boolean"
+
 emptyEnv :: Env
 emptyEnv = Map.empty
 
 -- Environment loaded with standard operations.
 initialEnv :: Env
-initialEnv = Map.fromList [("||", ValueOper $ valuiseBool (||)),
-  ("&&", ValueOper $ valuiseBool (&&)),
-  ("==", ValueOper $ valuiseEq (==)),
-  ("!=", ValueOper $ valuiseEq (/=)),
-  ("<", ValueOper $ valuiseEq (<)),
-  ("<=", ValueOper $ valuiseEq (<=)),
-  (">", ValueOper $ valuiseEq (>)),
-  (">=", ValueOper $ valuiseEq (>=)),
-  ("+", ValueOper $ valuiseRat (+)),
-  ("-", ValueOper $ valuiseRat (-)),
-  ("*", ValueOper $ valuiseRat (*)),
-  ("/", ValueOper $ valuiseNonzero (/))]
+initialEnv = Map.fromList [("||", ValueBinExp $ valuiseBool (||))
+  ,("&&", ValueBinExp $ valuiseBool (&&))
+  ,("==", ValueBinExp $ valuiseEq (==))
+  ,("!=", ValueBinExp $ valuiseEq (/=))
+  ,("<", ValueBinExp $ valuiseEq (<))
+  ,("<=", ValueBinExp $ valuiseEq (<=))
+  ,(">", ValueBinExp $ valuiseEq (>))
+  ,(">=", ValueBinExp $ valuiseEq (>=))
+  ,("+", ValueBinExp $ valuiseRat (+))
+  ,("-", ValueBinExp $ valuiseRat (-))
+  ,("*", ValueBinExp $ valuiseRat (*))
+  ,("/", ValueBinExp $ valuiseNonzero (/))
+  ,("!", ValueUnExp valuisedNeg)]
 
 -- Potentially perform assignment.
 handleAsgn :: Value -> Env -> Env
@@ -70,9 +75,12 @@ eval e (ValueInit a b) =
   then ValueFailure "Error: Variable already initialised"
   else ValueInit a $ eval e b
 eval e (ValueIdfr a) = varLookup a e
-eval e (ValueOp a b c) = case varLookup a e of
+eval e (ValueBinOp a b c) = case varLookup a e of
   ValueFailure _ -> ValueFailure "Error: Undefined operator"
-  op -> (vOper op) (eval e b) $ eval e c
+  op -> (vBin op) (eval e b) $ eval e c
+eval e (ValueUnOp a b) = case varLookup a e of
+  ValueFailure _ -> ValueFailure "Error: Undefined operator"
+  op -> (vUn op) (eval e b)
 eval _ v = v
 
 repl :: Env -> IO ()

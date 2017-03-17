@@ -35,23 +35,23 @@ Asgn :: {Value}
   | Disj {$1}
 
 Disj :: {Value}
-  : Disj disjOp Conj {ValueOp $2 $1 $3}
+  : Disj disjOp Conj {ValueBinOp $2 $1 $3}
   | Conj {$1}
 
 Conj :: {Value}
-  : Conj conjOp Cmp {ValueOp $2 $1 $3}
+  : Conj conjOp Cmp {ValueBinOp $2 $1 $3}
   | Cmp {$1}
 
 Cmp :: {Value}
-  : Cmp cmpOp Sum {ValueOp $2 $1 $3}
+  : Cmp cmpOp Sum {ValueBinOp $2 $1 $3}
   | Sum {$1}
 
 Sum :: {Value}
-  : Sum sumOp Term {ValueOp $2 $1 $3}
+  : Sum sumOp Term {ValueBinOp $2 $1 $3}
   | Term {$1}
 
 Term :: {Value}
-  : Term termOp Atom {ValueOp $2 $1 $3}
+  : Term termOp Atom {ValueBinOp $2 $1 $3}
   | Atom {$1}
 
 Idfr :: {Value}
@@ -62,6 +62,14 @@ Atom :: {Value}
   | Rat {$1}
   | Idfr {$1}
   | '(' Disj ')' {$2}
+  | '(' UnOp Disj ')' {ValueUnOp $2 $3}
+
+UnOp :: {String}
+  : disjOp {$1}
+  | conjOp {$1}
+  | cmpOp {$1}
+  | sumOp {$1}
+  | termOp {$1}
 
 Rat :: {Value}
   : rational {ValueRat $1}
@@ -100,8 +108,10 @@ data Value
   | ValueIdfr {vIdfr :: String}
   | ValueReasgn {vLHS :: String, vRHS :: Value}
   | ValueInit {vLHS :: String, vRHS :: Value}
-  | ValueOp String Value Value
-  | ValueOper {vOper :: (Value -> Value -> Value)}
+  | ValueBinOp String Value Value
+  | ValueBinExp {vBin :: (Value -> Value -> Value)}
+  | ValueUnOp String Value
+  | ValueUnExp {vUn :: (Value -> Value)}
   | ValueFailure String
 
 instance Eq Value where
