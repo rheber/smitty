@@ -2,7 +2,8 @@ import Data.Map as Map
 import GHC.IO.Handle (hFlush)
 import System.IO (stdout)
 
-import Grammar(E(..), Value(..), lexer, parseStmt)
+import Grammar(parseStmt)
+import Lexer (E(..), Value(..), lexer)
 
 type Env = Map.Map String Value
 
