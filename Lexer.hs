@@ -13,6 +13,7 @@ data Value
   | ValueIdfr {vIdfr :: String}
   | ValueReasgn {vLHS :: String, vRHS :: Value}
   | ValueInit {vLHS :: String, vRHS :: Value}
+  | ValueSeq Value Value
   | ValueBinOp String Value Value
   | ValueBinExp {vBin :: (Value -> Value -> Value)}
   | ValueUnOp String Value
@@ -36,6 +37,7 @@ instance Ord Value where
 instance Show Value where
   show (ValueReasgn _ v) = show v
   show (ValueInit _ v) = show v
+  show (ValueSeq _ v) = show v
   show (ValueBool False) = ":("
   show (ValueBool True) = ":)"
   show (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
@@ -55,6 +57,7 @@ data Token =
   TokenTermOp String |
   TokenOP |
   TokenCP |
+  TokenSemi |
   InvalidToken
   deriving Show
 
@@ -100,4 +103,5 @@ lexer (':':'(':cs) = TokenFalse:lexer cs
 lexer (':':')':cs) = TokenTrue:lexer cs
 lexer ('(':cs) = TokenOP:lexer cs
 lexer (')':cs) = TokenCP:lexer cs
+lexer (';':cs) = TokenSemi:lexer cs
 lexer _ = InvalidToken:[]

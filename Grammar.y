@@ -23,8 +23,13 @@ import Lexer (E, Token(..), Value(..), parseError)
   ':)' {TokenTrue}
   '(' {TokenOP}
   ')' {TokenCP}
+  ';' {TokenSemi}
 
 %%
+
+Stmts :: {Value}
+  : Stmts ';' Stmt {ValueSeq $1 $3}
+  | Stmt {$1}
 
 Stmt :: {Value}
   : Asgn {$1}

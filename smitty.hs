@@ -59,6 +59,9 @@ handleAsgn v e = case v of
   ValueInit name value -> case value of
     ValueFailure _ -> e
     _ -> if member name e then e else Map.insert name value e
+  ValueSeq a b ->
+    let e' = handleAsgn a e
+    in handleAsgn b e'
   _ -> e
 
 evalIfOk :: Env -> E Value -> Value
@@ -82,6 +85,9 @@ eval e (ValueBinOp a b c) = case varLookup a e of
 eval e (ValueUnOp a b) = case varLookup a e of
   ValueFailure _ -> ValueFailure "Error: Undefined operator"
   op -> (vUn op) (eval e b)
+eval e (ValueSeq a b) = let
+  e' = handleAsgn a e
+  in ValueSeq (eval e a) (eval e' b)
 eval _ v = v
 
 repl :: Env -> IO ()
