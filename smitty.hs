@@ -3,7 +3,7 @@ import GHC.IO.Handle (hFlush)
 import System.IO (stdout)
 
 import Grammar(parseStmt)
-import Lexer (E(..), Value(..), lexer)
+import Lexer (E, Value(..), lexer)
 
 type Env = Map.Map String Value
 
@@ -63,8 +63,8 @@ handleAsgn v e = case v of
 
 evalIfOk :: Env -> E Value -> Value
 evalIfOk e v = case v of
-  Ok a -> eval e a
-  Failed s -> ValueFailure "Syntax error"
+  Right a -> eval e a
+  Left s -> ValueFailure "Syntax error"
 
 eval :: Env -> Value -> Value
 eval e (ValueReasgn a b) =

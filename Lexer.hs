@@ -3,28 +3,9 @@ module Lexer where
 import Data.Char (isAlphaNum, isDigit, isLetter, isSpace)
 import Data.Ratio
 
-data E a = Ok a | Failed String
-instance Functor E where
-  fmap f u = case u of
-    Ok a -> Ok $ f a
-    Failed s -> Failed s
-instance Applicative E where
-  pure a = Ok a
-  f <*> u = case u of
-    Ok a -> case f of
-      Ok g -> Ok $ g a
-      Failed s -> Failed s
-    Failed s -> Failed s
-instance Monad E where
-  return = Ok
-  m >>= k = case m of
-    Ok a -> k a
-    Failed e -> Failed e
-instance Show a => Show (E a) where
-  show (Ok a) = show a
-  show (Failed e) = e
+type E a = Either String a
 parseError :: [Token] -> E a
-parseError _ = Failed "Parse error"
+parseError _ = Left "Parse error"
 
 data Value
   = ValueBool {vBool :: Bool}
