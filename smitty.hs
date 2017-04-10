@@ -88,6 +88,9 @@ eval e (ValueUnOp a b) = case varLookup a e of
 eval e (ValueSeq a b) = let
   e' = handleAsgn a e
   in ValueSeq (eval e a) (eval e' b)
+eval e (ValueSelection a b c) = case eval e a of
+  ValueBool bl -> if bl then (eval e b) else (eval e c)
+  _ -> ValueFailure "Type error: Expected boolean"
 eval _ v = v
 
 repl :: Env -> IO ()

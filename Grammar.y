@@ -17,13 +17,17 @@ import Lexer (E, Token(..), Value(..), parseError)
   cmpOp {TokenCmpOp $$}
   sumOp {TokenSumOp $$}
   termOp {TokenTermOp $$}
+  ':' {TokenColon}
   '::=' {TokenReassign}
   ':=' {TokenInit}
   ':(' {TokenFalse}
   ':)' {TokenTrue}
   '(' {TokenOP}
   ')' {TokenCP}
+  '{' {TokenOB}
+  '}' {TokenCB}
   ';' {TokenSemi}
+  '?' {TokenQM}
 
 %%
 
@@ -34,6 +38,10 @@ Stmts :: {Value}
 Stmt :: {Value}
   : {- empty -} {ValueEmpty}
   | Asgn {$1}
+  | Selection {$1}
+
+Selection :: {Value}
+  : '?' '(' Disj ')' '{' Stmts '}' ':' '{' Stmts '}' {ValueSelection $3 $6 $10}
 
 Asgn :: {Value}
   : identifier '::=' Disj {ValueReasgn $1 $3}

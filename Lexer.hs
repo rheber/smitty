@@ -15,6 +15,7 @@ data Value
   | ValueReasgn {vLHS :: String, vRHS :: Value}
   | ValueInit {vLHS :: String, vRHS :: Value}
   | ValueSeq Value Value
+  | ValueSelection Value Value Value
   | ValueBinOp String Value Value
   | ValueBinExp {vBin :: (Value -> Value -> Value)}
   | ValueUnOp String Value
@@ -59,7 +60,11 @@ data Token =
   TokenTermOp String |
   TokenOP |
   TokenCP |
+  TokenOB |
+  TokenCB |
   TokenSemi |
+  TokenColon |
+  TokenQM |
   InvalidToken
   deriving Show
 
@@ -103,7 +108,11 @@ lexer (':':':':'=':cs) = TokenReassign:lexer cs
 lexer (':':'=':cs) = TokenInit:lexer cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
 lexer (':':')':cs) = TokenTrue:lexer cs
+lexer (':':cs) = TokenColon:lexer cs
 lexer ('(':cs) = TokenOP:lexer cs
 lexer (')':cs) = TokenCP:lexer cs
+lexer ('{':cs) = TokenOB:lexer cs
+lexer ('}':cs) = TokenCB:lexer cs
 lexer (';':cs) = TokenSemi:lexer cs
+lexer ('?':cs) = TokenQM:lexer cs
 lexer _ = InvalidToken:[]
