@@ -97,7 +97,9 @@ repl e = do
   tokens <- getLine
   let parsedStmt = parseStmt $ lexer tokens
   let value = evalIfOk e parsedStmt
-  print value
+  let s = show value
+  putStr s
+  if s /= "" then putStr "\n" else putStr ""
   repl $ handleAsgn value e
 
 main :: IO ()

@@ -8,7 +8,8 @@ parseError :: [Token] -> E a
 parseError _ = Left "Parse error"
 
 data Value
-  = ValueBool {vBool :: Bool}
+  = ValueEmpty
+  | ValueBool {vBool :: Bool}
   | ValueRat {vRat :: Rational}
   | ValueIdfr {vIdfr :: String}
   | ValueReasgn {vLHS :: String, vRHS :: Value}
@@ -35,6 +36,7 @@ instance Ord Value where
   _ > _ = False
 
 instance Show Value where
+  show ValueEmpty = ""
   show (ValueReasgn _ v) = show v
   show (ValueInit _ v) = show v
   show (ValueSeq _ v) = show v

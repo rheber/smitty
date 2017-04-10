@@ -32,7 +32,8 @@ Stmts :: {Value}
   | Stmt {$1}
 
 Stmt :: {Value}
-  : Asgn {$1}
+  : {- empty -} {ValueEmpty}
+  | Asgn {$1}
 
 Asgn :: {Value}
   : identifier '::=' Disj {ValueReasgn $1 $3}
