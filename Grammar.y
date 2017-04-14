@@ -1,7 +1,8 @@
 {
 module Grammar where
 
-import Lexer (E, Token(..), Value(..), parseError)
+import Lexer (E, Token(..), parseError)
+import Value (Value(..))
 }
 
 %name parseStmt
