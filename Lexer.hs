@@ -4,7 +4,9 @@ import Data.Char (isAlphaNum, isDigit, isLetter, isSpace)
 
 type E a = Either String a
 parseError :: [Token] -> E a
-parseError _ = Left "Parse error"
+parseError [] = Left "Syntax error: Unexpected end of input"
+parseError (InvalidToken c:_) = Left $ "Syntax error: Unexpected character " ++ [c]
+parseError _ = Left "Syntax error"
 
 data Token =
   TokenIdfr String |
@@ -25,7 +27,7 @@ data Token =
   TokenSemi |
   TokenColon |
   TokenQM |
-  InvalidToken
+  InvalidToken Char
   deriving Show
 
 lexIdfr :: String -> [Token]
@@ -58,12 +60,6 @@ isOpchar c = elem c opchars
 
 lexer :: String -> [Token]
 lexer [] = []
-lexer (c:cs)
-  | isSpace c = lexer cs
-  | isLetter c = lexIdfr (c:cs)
-  | isDigit c = lexInteger (c:cs)
-  | isOpchar c = lexOp (c:cs)
-  | c == '#' = lexer $ tail $ dropWhile (\x -> x /= '#') cs
 lexer (':':':':'=':cs) = TokenReassign:lexer cs
 lexer (':':'=':cs) = TokenInit:lexer cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
@@ -75,4 +71,10 @@ lexer ('{':cs) = TokenOB:lexer cs
 lexer ('}':cs) = TokenCB:lexer cs
 lexer (';':cs) = TokenSemi:lexer cs
 lexer ('?':cs) = TokenQM:lexer cs
-lexer _ = InvalidToken:[]
+lexer (c:cs)
+  | isSpace c = lexer cs
+  | isLetter c = lexIdfr (c:cs)
+  | isDigit c = lexInteger (c:cs)
+  | isOpchar c = lexOp (c:cs)
+  | c == '#' = lexer $ tail $ dropWhile (\x -> x /= '#') cs
+  | otherwise = [InvalidToken c]

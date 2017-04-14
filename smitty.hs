@@ -49,7 +49,7 @@ handleAsgn v e = case v of
 evalIfOk :: Env -> E Value -> Value
 evalIfOk e v = case v of
   Right a -> eval e a
-  Left s -> ValueFailure "Syntax error"
+  Left s -> ValueFailure s
 
 eval :: Env -> Value -> Value
 eval e (ValueReasgn a b) =
