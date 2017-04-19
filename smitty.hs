@@ -79,13 +79,32 @@ repl :: Env -> IO ()
 repl e = do
   putStr "smitty> "
   hFlush stdout
-  tokens <- getLine
-  let parsedStmt = parseStmt $ lexer tokens
-  let value = evalIfOk e parsedStmt
-  let s = show value
-  putStr s
-  if s /= "" then putStr "\n" else putStr ""
-  repl $ handleAsgn value e
+  inputString <- getLine
+  let parsedStmt = parseStmt $ lexer inputString
+  if parsedStmt /= Left "Syntax error: Unexpected end of input"
+  then do
+    let value = evalIfOk e parsedStmt
+    let s = show value
+    putStr s
+    if s /= "" then putStr "\n" else putStr ""
+    repl $ handleAsgn value e
+  else repl' e inputString
+
+repl' :: Env -> String -> IO ()
+repl' e oldInput = do
+  putStr "...> "
+  hFlush stdout
+  newInput <- getLine
+  let inputString = oldInput ++ newInput
+  let parsedStmt = parseStmt $ lexer inputString
+  if parsedStmt /= Left "Syntax error: Unexpected end of input"
+  then do
+    let value = evalIfOk e parsedStmt
+    let s = show value
+    putStr s
+    if s /= "" then putStr "\n" else putStr ""
+    repl $ handleAsgn value e
+  else repl' e inputString
 
 main :: IO ()
 main = repl initialEnv
