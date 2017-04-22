@@ -1,3 +1,5 @@
+module Smitty where
+
 import Data.Map as Map
 import GHC.IO.Handle (hFlush)
 import System.IO (stdout)
@@ -75,24 +77,9 @@ eval e (ValueSelection a b c) = case eval e a of
   _ -> ValueFailure "Type error: Expected boolean"
 eval _ v = v
 
-repl :: Env -> IO ()
-repl e = do
-  putStr "smitty> "
-  hFlush stdout
-  inputString <- getLine
-  let parsedStmt = parseStmt $ lexer inputString
-  if parsedStmt /= Left "Syntax error: Unexpected end of input"
-  then do
-    let value = evalIfOk e parsedStmt
-    let s = show value
-    putStr s
-    if s /= "" then putStr "\n" else putStr ""
-    repl $ handleAsgn value e
-  else repl' e inputString
-
-repl' :: Env -> String -> IO ()
-repl' e oldInput = do
-  putStr "...> "
+repl :: Env -> String -> String -> IO ()
+repl e oldInput prompt = do
+  putStr prompt
   hFlush stdout
   newInput <- getLine
   let inputString = oldInput ++ newInput
@@ -103,8 +90,8 @@ repl' e oldInput = do
     let s = show value
     putStr s
     if s /= "" then putStr "\n" else putStr ""
-    repl $ handleAsgn value e
-  else repl' e inputString
+    repl (handleAsgn value e) "" "smitty> "
+  else repl e inputString "...> "
 
 main :: IO ()
-main = repl initialEnv
+main = repl initialEnv "" "smitty> "
