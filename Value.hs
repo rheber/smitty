@@ -14,6 +14,7 @@ data Value
   | ValueInit {vLHS :: String, vRHS :: Value}
   | ValueSeq Value Value
   | ValueSelection Value Value Value
+  | ValueSimpleWhile Value Value
   | ValueBinOp String Value Value
   | ValueBinExp {vBin :: (Value -> Value -> Value)}
   | ValueUnOp String Value
@@ -47,6 +48,7 @@ printValue (ValueBool False) = ":("
 printValue (ValueBool True) = ":)"
 printValue (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
 printValue (ValueFailure s) = s
+printValue v = show v
 
 valuiseBool :: (Bool -> Bool -> Bool) -> (Value -> Value -> Value)
 valuiseBool f (ValueBool a) (ValueBool b) = ValueBool $ f a b

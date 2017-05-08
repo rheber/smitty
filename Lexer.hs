@@ -25,8 +25,8 @@ data Token =
   TokenOB |
   TokenCB |
   TokenSemi |
-  TokenColon |
   TokenQM |
+  TokenAt |
   InvalidToken Char
   deriving Show
 
@@ -64,13 +64,13 @@ lexer (':':':':'=':cs) = TokenReassign:lexer cs
 lexer (':':'=':cs) = TokenInit:lexer cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
 lexer (':':')':cs) = TokenTrue:lexer cs
-lexer (':':cs) = TokenColon:lexer cs
 lexer ('(':cs) = TokenOP:lexer cs
 lexer (')':cs) = TokenCP:lexer cs
 lexer ('{':cs) = TokenOB:lexer cs
 lexer ('}':cs) = TokenCB:lexer cs
 lexer (';':cs) = TokenSemi:lexer cs
 lexer ('?':cs) = TokenQM:lexer cs
+lexer ('@':cs) = TokenAt:lexer cs
 lexer (c:cs)
   | isSpace c = lexer cs
   | isLetter c = lexIdfr (c:cs)

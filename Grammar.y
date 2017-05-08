@@ -18,7 +18,6 @@ import Value (Value(..))
   cmpOp {TokenCmpOp $$}
   sumOp {TokenSumOp $$}
   termOp {TokenTermOp $$}
-  ':' {TokenColon}
   '::=' {TokenReassign}
   ':=' {TokenInit}
   ':(' {TokenFalse}
@@ -29,7 +28,7 @@ import Value (Value(..))
   '}' {TokenCB}
   ';' {TokenSemi}
   '?' {TokenQM}
-
+  '@' {TokenAt}
 %%
 
 Stmts :: {Value}
@@ -40,9 +39,13 @@ Stmt :: {Value}
   : {- empty -} {ValueEmpty}
   | Asgn {$1}
   | Selection {$1}
+  | SimpleWhile {$1}
 
 Selection :: {Value}
-  : '?' '(' Disj ')' '{' Stmts '}' ':' '{' Stmts '}' {ValueSelection $3 $6 $10}
+  : '?' Paren '{' Stmts '}' '{' Stmts '}' {ValueSelection $2 $4 $7}
+
+SimpleWhile :: {Value}
+  : '@' Paren '{' Stmts '}' {ValueSimpleWhile $2 $4}
 
 Asgn :: {Value}
   : identifier '::=' Disj {ValueReasgn $1 $3}
@@ -76,7 +79,10 @@ Atom :: {Value}
   : Bool {$1}
   | Rat {$1}
   | Idfr {$1}
-  | '(' Disj ')' {$2}
+  | Paren {$1}
+
+Paren :: {Value}
+  : '(' Disj ')' {$2}
   | '(' UnOp Disj ')' {ValueUnOp $2 $3}
 
 UnOp :: {String}
