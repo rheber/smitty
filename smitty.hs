@@ -6,7 +6,7 @@ import System.IO (stdout)
 
 import Grammar(parseStmt)
 import Lexer (E, lexer)
-import Value (Value(..),
+import Value (Value(..), printValue,
   valuiseBool, valuiseEq, valuiseRat, valuiseNonzero, valuisedNeg)
 
 type Env = Map.Map String Value
@@ -87,7 +87,7 @@ repl e oldInput prompt = do
   if parsedStmt /= Left "Syntax error: Unexpected end of input"
   then do
     let value = evalIfOk e parsedStmt
-    let s = show value
+    let s = printValue value
     putStr s
     if s /= "" then putStr "\n" else putStr ""
     repl (handleAsgn value e) "" "smitty> "

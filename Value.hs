@@ -2,6 +2,9 @@ module Value where
 
 import Data.Ratio (numerator, denominator)
 
+instance Show (a -> b) where
+   showsPrec _ _ = showString "<function>"
+
 data Value
   = ValueEmpty
   | ValueBool {vBool :: Bool}
@@ -16,6 +19,7 @@ data Value
   | ValueUnOp String Value
   | ValueUnExp {vUn :: (Value -> Value)}
   | ValueFailure String
+  deriving Show
 
 instance Eq Value where
   (ValueBool a) == (ValueBool b) = a == b
@@ -31,15 +35,18 @@ instance Ord Value where
   (ValueRat a) > (ValueRat b) = a > b
   _ > _ = False
 
-instance Show Value where
-  show ValueEmpty = ""
-  show (ValueReasgn _ v) = show v
-  show (ValueInit _ v) = show v
-  show (ValueSeq _ v) = show v
-  show (ValueBool False) = ":("
-  show (ValueBool True) = ":)"
-  show (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
-  show (ValueFailure s) = s
+printValue :: Value -> String
+printValue ValueEmpty = ""
+printValue (ValueReasgn _ v) = printValue v
+printValue (ValueInit _ v) = printValue v
+printValue (ValueSeq _ v) = printValue v
+printValue (ValueSelection a b c) = case a of
+  ValueBool bl -> if bl then show b else show c
+  _ -> ""
+printValue (ValueBool False) = ":("
+printValue (ValueBool True) = ":)"
+printValue (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
+printValue (ValueFailure s) = s
 
 valuiseBool :: (Bool -> Bool -> Bool) -> (Value -> Value -> Value)
 valuiseBool f (ValueBool a) (ValueBool b) = ValueBool $ f a b
