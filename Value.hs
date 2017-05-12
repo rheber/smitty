@@ -38,12 +38,6 @@ instance Ord Value where
 
 printValue :: Value -> String
 printValue ValueEmpty = ""
-printValue (ValueReasgn _ v) = printValue v
-printValue (ValueInit _ v) = printValue v
-printValue (ValueSeq _ v) = printValue v
-printValue (ValueSelection a b c) = case a of
-  ValueBool bl -> if bl then show b else show c
-  _ -> ""
 printValue (ValueBool False) = ":("
 printValue (ValueBool True) = ":)"
 printValue (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)

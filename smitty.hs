@@ -40,6 +40,21 @@ eval (ValueBinOp name b c) e = case varLookup name e of
 eval (ValueUnOp name b) e = case varLookup name e of
   ValueFailure _ -> ValueFailure "Error: Undefined operator"
   op -> (vUn op) (eval b e)
+eval (ValueSeq a v) e = eval v (exec a e)
+eval (ValueInit name v) e =
+  if member name e
+  then ValueFailure "Error: Variable already initialised"
+  else eval v e
+eval (ValueReasgn name v) e =
+  if member name e
+  then eval v e
+  else ValueFailure "Error: Variable not initialised"
+eval (ValueSelection cond a b) e = case eval cond e of
+  ValueBool bl -> eval (if bl then a else b) e
+  _ -> ValueFailure "Type error: Expected boolean"
+eval w@(ValueSimpleWhile cond v) e = case eval cond e of
+  ValueBool bl -> eval (if bl then (ValueSeq v w) else ValueEmpty) e
+  _ -> ValueFailure "Type error: Expected boolean"
 eval v _ = v
 
 exec :: Value -> Env -> Env
