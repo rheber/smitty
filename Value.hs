@@ -14,7 +14,7 @@ data Value
   | ValueInit {vLHS :: String, vRHS :: Value}
   | ValueSeq Value Value
   | ValueSelection Value Value Value
-  | ValueSimpleWhile Value Value
+  | ValueWhile Value Value Value
   | ValueBinOp String Value Value
   | ValueBinExp {vBin :: (Value -> Value -> Value)}
   | ValueUnOp String Value

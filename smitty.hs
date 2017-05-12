@@ -52,9 +52,9 @@ eval (ValueReasgn name v) e =
 eval (ValueSelection cond a b) e = case eval cond e of
   ValueBool bl -> eval (if bl then a else b) e
   _ -> ValueFailure "Type error: Expected boolean"
-eval w@(ValueSimpleWhile cond v) e = case eval cond e of
-  ValueBool bl -> eval (if bl then (ValueSeq v w) else ValueEmpty) e
-  _ -> ValueFailure "Type error: Expected boolean"
+eval w@(ValueWhile u cond v) e = eval (ValueSeq u $ case eval cond (exec u e) of
+  ValueBool bl -> if bl then (ValueSeq v w) else ValueEmpty
+  _ -> ValueFailure "Type error: Expected boolean") e
 eval v _ = v
 
 exec :: Value -> Env -> Env
@@ -68,9 +68,9 @@ exec (ValueReasgn name v) e = case v of
 exec (ValueSelection cond a b) e = case eval cond e of
   ValueBool bl -> exec (if bl then a else b) e
   _ -> e
-exec w@(ValueSimpleWhile cond v) e = case eval cond e of
-  ValueBool bl -> exec (if bl then (ValueSeq v w) else ValueEmpty) e
-  _ -> e
+exec w@(ValueWhile u cond v) e = exec (ValueSeq u $ case eval cond (exec u e) of
+  ValueBool bl -> if bl then (ValueSeq v w) else ValueEmpty
+  _ -> ValueEmpty) e
 exec _ e = e
 
 run :: E Value -> Env -> (Value, Env)

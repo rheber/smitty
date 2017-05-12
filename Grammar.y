@@ -39,13 +39,13 @@ Stmt :: {Value}
   : {- empty -} {ValueEmpty}
   | Asgn {$1}
   | Selection {$1}
-  | SimpleWhile {$1}
+  | While {$1}
 
 Selection :: {Value}
   : '?' Paren '{' Stmts '}' '{' Stmts '}' {ValueSelection $2 $4 $7}
 
-SimpleWhile :: {Value}
-  : '@' Paren '{' Stmts '}' {ValueSimpleWhile $2 $4}
+While :: {Value}
+  : '@' '{' Stmts '}' Paren '{' Stmts '}' {ValueWhile $3 $5 $7}
 
 Asgn :: {Value}
   : identifier '::=' Disj {ValueReasgn $1 $3}
