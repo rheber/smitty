@@ -6,11 +6,13 @@ type E a = Either String a
 parseError :: [Token] -> E a
 parseError [] = Left "Syntax error: Unexpected end of input"
 parseError (InvalidToken c:_) = Left $ "Syntax error: Unexpected character " ++ [c]
+parseError (MissingQuoteToken:_) = Left $ "Syntax error: Missing closing \""
 parseError _ = Left "Syntax error"
 
 data Token =
   TokenIdfr String |
   TokenRational Rational |
+  TokenString String |
   TokenReassign |
   TokenInit |
   TokenFalse |
@@ -27,8 +29,17 @@ data Token =
   TokenSemi |
   TokenQM |
   TokenAt |
-  InvalidToken Char
+  InvalidToken Char |
+  MissingQuoteToken
   deriving Show
+
+lexString :: String -> [Token]
+lexString cs = lexStr "" cs
+
+lexStr s ('"':cs) = (TokenString $ reverse s):lexer cs
+lexStr s ('\\':c:cs) = lexStr (c:'\\':s) cs
+lexStr s (c:cs) = lexStr (c:s) cs
+lexStr s "" = [MissingQuoteToken]
 
 lexIdfr :: String -> [Token]
 lexIdfr cs =
@@ -71,6 +82,7 @@ lexer ('}':cs) = TokenCB:lexer cs
 lexer (';':cs) = TokenSemi:lexer cs
 lexer ('?':cs) = TokenQM:lexer cs
 lexer ('@':cs) = TokenAt:lexer cs
+lexer ('"':cs) = lexString cs
 lexer (c:cs)
   | isSpace c = lexer cs
   | isLetter c = lexIdfr (c:cs)

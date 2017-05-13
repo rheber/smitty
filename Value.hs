@@ -9,6 +9,7 @@ data Value
   = ValueEmpty
   | ValueBool {vBool :: Bool}
   | ValueRat {vRat :: Rational}
+  | ValueString String
   | ValueIdfr {vIdfr :: String}
   | ValueReasgn {vLHS :: String, vRHS :: Value}
   | ValueInit {vLHS :: String, vRHS :: Value}
@@ -25,15 +26,20 @@ data Value
 instance Eq Value where
   (ValueBool a) == (ValueBool b) = a == b
   (ValueRat a) == (ValueRat b) = a == b
+  (ValueString a) == (ValueString b) = a == b
   _ == _ = False
 instance Ord Value where
   (ValueRat a) <= (ValueRat b) = a <= b
+  (ValueString a) <= (ValueString b) = a <= b
   u <= v = u == v
   (ValueRat a) >= (ValueRat b) = a >= b
+  (ValueString a) >= (ValueString b) = a >= b
   u >= v = u == v
   (ValueRat a) < (ValueRat b) = a < b
+  (ValueString a) < (ValueString b) = a < b
   _ < _ = False
   (ValueRat a) > (ValueRat b) = a > b
+  (ValueString a) > (ValueString b) = a > b
   _ > _ = False
 
 printValue :: Value -> String
@@ -41,6 +47,7 @@ printValue ValueEmpty = ""
 printValue (ValueBool False) = ":("
 printValue (ValueBool True) = ":)"
 printValue (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
+printValue (ValueString s) = s -- Escapes not interpreted here.
 printValue (ValueFailure s) = s
 printValue v = show v
 

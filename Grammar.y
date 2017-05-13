@@ -13,6 +13,7 @@ import Value (Value(..))
 %token
   identifier {TokenIdfr $$}
   rational {TokenRational $$}
+  string {TokenString $$}
   disjOp {TokenDisjOp $$}
   conjOp {TokenConjOp $$}
   cmpOp {TokenCmpOp $$}
@@ -78,6 +79,7 @@ Idfr :: {Value}
 Atom :: {Value}
   : Bool {$1}
   | Rat {$1}
+  | String {$1}
   | Idfr {$1}
   | Paren {$1}
 
@@ -94,6 +96,9 @@ UnOp :: {String}
 
 Rat :: {Value}
   : rational {ValueRat $1}
+
+String :: {Value}
+  : string {ValueString $1}
 
 Bool :: {Value}
   : ':(' {ValueBool False}
