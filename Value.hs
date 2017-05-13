@@ -3,23 +3,23 @@ module Value where
 import Data.Ratio (numerator, denominator)
 
 instance Show (a -> b) where
-   showsPrec _ _ = showString "<function>"
+  showsPrec _ _ = showString "<function>"
 
 data Value
   = ValueEmpty
-  | ValueBool {vBool :: Bool}
-  | ValueRat {vRat :: Rational}
+  | ValueBool Bool
+  | ValueRat Rational
   | ValueString String
-  | ValueIdfr {vIdfr :: String}
-  | ValueReasgn {vLHS :: String, vRHS :: Value}
-  | ValueInit {vLHS :: String, vRHS :: Value}
+  | ValueIdfr String
+  | ValueReasgn String Value
+  | ValueInit String Value
   | ValueSeq Value Value
   | ValueSelection Value Value Value
   | ValueWhile Value Value Value
   | ValueBinOp String Value Value
-  | ValueBinExp {vBin :: (Value -> Value -> Value)}
+  | ValueBinExp (Value -> Value -> Value)
   | ValueUnOp String Value
-  | ValueUnExp {vUn :: (Value -> Value)}
+  | ValueUnExp (Value -> Value)
   | ValueFailure String
   deriving Show
 

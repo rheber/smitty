@@ -9,28 +9,28 @@ parseError (InvalidToken c:_) = Left $ "Syntax error: Unexpected character " ++ 
 parseError (MissingQuoteToken:_) = Left $ "Syntax error: Missing closing \""
 parseError _ = Left "Syntax error"
 
-data Token =
-  TokenIdfr String |
-  TokenRational Rational |
-  TokenString String |
-  TokenReassign |
-  TokenInit |
-  TokenFalse |
-  TokenTrue |
-  TokenDisjOp String |
-  TokenConjOp String |
-  TokenCmpOp String |
-  TokenSumOp String |
-  TokenTermOp String |
-  TokenOP |
-  TokenCP |
-  TokenOB |
-  TokenCB |
-  TokenSemi |
-  TokenQM |
-  TokenAt |
-  InvalidToken Char |
-  MissingQuoteToken
+data Token
+  = TokenIdfr String
+  | TokenRational Rational
+  | TokenString String
+  | TokenReassign
+  | TokenInit
+  | TokenFalse
+  | TokenTrue
+  | TokenDisjOp String
+  | TokenConjOp String
+  | TokenCmpOp String
+  | TokenSumOp String
+  | TokenTermOp String
+  | TokenOP
+  | TokenCP
+  | TokenOB
+  | TokenCB
+  | TokenSemi
+  | TokenQM
+  | TokenAt
+  | InvalidToken Char
+  | MissingQuoteToken
   deriving Show
 
 lexString :: String -> [Token]
@@ -42,17 +42,16 @@ lexStr s (c:cs) = lexStr (c:s) cs
 lexStr s "" = [MissingQuoteToken]
 
 lexIdfr :: String -> [Token]
-lexIdfr cs =
-  case span isAlphaNum cs of
-    (idfr, rest) -> TokenIdfr idfr:lexer rest
+lexIdfr cs = case span isAlphaNum cs of
+  (idfr, rest) -> TokenIdfr idfr:lexer rest
 
 lexInteger :: String -> [Token]
 lexInteger cs = TokenRational (toRational $ read num):lexer rest
   where (num,rest) = span isDigit cs
 
 lexOp :: String -> [Token]
-lexOp s@(c:_) = case span isOpchar s of
-  (op, rest) -> case c of
+lexOp s = case span isOpchar s of
+  (op@(c:_), rest) -> case c of
     '|' -> TokenDisjOp op:lexer rest
     '&' -> TokenConjOp op:lexer rest
     '=' -> TokenCmpOp op:lexer rest
@@ -70,7 +69,8 @@ isOpchar :: Char -> Bool
 isOpchar c = elem c opchars
 
 lexer :: String -> [Token]
-lexer [] = []
+lexer [] = [] -- End of input.
+lexer ('#':cs) = lexer $ tail $ dropWhile (\x -> x /= '#') cs -- Comments.
 lexer (':':':':'=':cs) = TokenReassign:lexer cs
 lexer (':':'=':cs) = TokenInit:lexer cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
@@ -88,5 +88,4 @@ lexer (c:cs)
   | isLetter c = lexIdfr (c:cs)
   | isDigit c = lexInteger (c:cs)
   | isOpchar c = lexOp (c:cs)
-  | c == '#' = lexer $ tail $ dropWhile (\x -> x /= '#') cs
   | otherwise = [InvalidToken c]

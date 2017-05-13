@@ -18,7 +18,8 @@ emptyEnv = Map.empty
 
 -- Environment loaded with standard operations.
 initialEnv :: Env
-initialEnv = Map.fromList [("||", ValueBinExp $ valuiseBool (||))
+initialEnv = Map.fromList [
+  ("||", ValueBinExp $ valuiseBool (||))
   ,("&&", ValueBinExp $ valuiseBool (&&))
   ,("==", ValueBinExp $ valuiseEq (==))
   ,("!=", ValueBinExp $ valuiseEq (/=))
@@ -30,16 +31,17 @@ initialEnv = Map.fromList [("||", ValueBinExp $ valuiseBool (||))
   ,("-", ValueBinExp $ valuiseRat (-))
   ,("*", ValueBinExp $ valuiseRat (*))
   ,("/", ValueBinExp $ valuiseNonzero (/))
-  ,("!", ValueUnExp valuisedNeg)]
+  ,("!", ValueUnExp valuisedNeg)
+  ]
 
 eval :: Value -> Env -> Value
 eval (ValueIdfr a) e = varLookup a e
 eval (ValueBinOp name b c) e = case varLookup name e of
   ValueFailure _ -> ValueFailure "Error: Undefined operator"
-  op -> (vBin op) (eval b e) $ eval c e
+  ValueBinExp op -> op (eval b e) $ eval c e
 eval (ValueUnOp name b) e = case varLookup name e of
   ValueFailure _ -> ValueFailure "Error: Undefined operator"
-  op -> (vUn op) (eval b e)
+  ValueUnExp op -> op $ eval b e
 eval (ValueSeq a v) e = eval v (exec a e)
 eval (ValueInit name v) e =
   if member name e
@@ -53,7 +55,7 @@ eval (ValueSelection cond a b) e = case eval cond e of
   ValueBool bl -> eval (if bl then a else b) e
   _ -> ValueFailure "Type error: Expected boolean"
 eval w@(ValueWhile u cond v) e = eval (ValueSeq u $ case eval cond (exec u e) of
-  ValueBool bl -> if bl then (ValueSeq v w) else ValueEmpty
+  ValueBool bl -> if bl then (ValueSeq v w) else ValueEmpty -- Ends empty anyway.
   _ -> ValueFailure "Type error: Expected boolean") e
 eval v _ = v
 
