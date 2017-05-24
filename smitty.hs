@@ -42,7 +42,9 @@ eval (ValueBinOp name b c) e = case varLookup name e of
 eval (ValueUnOp name b) e = case varLookup name e of
   ValueFailure _ -> ValueFailure "Error: Undefined operator"
   ValueUnExp op -> op $ eval b e
-eval (ValueSeq a v) e = eval v (exec a e)
+eval (ValueSeq a v) e = let m = eval a e in case m of
+  ValueFailure _ -> m
+  _ -> eval v (exec a e)
 eval (ValueInit name v) e =
   if member name e
   then ValueFailure "Error: Variable already initialised"
@@ -60,7 +62,9 @@ eval w@(ValueWhile u cond v) e = eval (ValueSeq u $ case eval cond (exec u e) of
 eval v _ = v
 
 exec :: Value -> Env -> Env
-exec (ValueSeq a v) e = exec v (exec a e)
+exec (ValueSeq a v) e = case (eval a e) of
+  ValueFailure _ -> e
+  _ -> exec v (exec a e)
 exec (ValueInit name v) e = case v of
   ValueFailure _ -> e
   _ -> if member name e then e else Map.insert name (eval v e) e

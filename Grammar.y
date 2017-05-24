@@ -33,7 +33,7 @@ import Value (Value(..))
 %%
 
 Stmts :: {Value}
-  : Stmts ';' Stmt {ValueSeq $1 $3}
+  : Stmt ';' Stmts {ValueSeq $1 $3}
   | Stmt {$1}
 
 Stmt :: {Value}
