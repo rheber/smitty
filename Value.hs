@@ -20,6 +20,7 @@ data Value
   | ValueBinExp (Value -> Value -> Value)
   | ValueUnOp String Value
   | ValueUnExp (Value -> Value)
+  | ValueBuiltin Value Value
   | ValueFailure String
   deriving Show
 
@@ -70,3 +71,7 @@ valuiseNonzero f _ _ = ValueFailure "Type error: Expected rationals"
 valuisedNeg :: Value -> Value
 valuisedNeg (ValueBool a) = (ValueBool $ not a)
 valuisedNeg _ = ValueFailure "Type error: Expected boolean"
+
+valuisedApprox :: Value -> Value
+valuisedApprox (ValueRat a) = ValueString $ show $ fromRational a
+valuisedApprox _ = ValueFailure "Type error: Expected rational"

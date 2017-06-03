@@ -4,7 +4,7 @@ import System.IO (stdout)
 
 import Grammar(parseStmt)
 import Lexer (E, lexer)
-import Value (Value(..), printValue,
+import Value (Value(..), printValue, valuisedApprox,
   valuiseBool, valuiseEq, valuiseRat, valuiseNonzero, valuisedNeg)
 
 type Env = Map.Map String Value
@@ -32,10 +32,14 @@ initialEnv = Map.fromList [
   ,("*", ValueBinExp $ valuiseRat (*))
   ,("/", ValueBinExp $ valuiseNonzero (/))
   ,("!", ValueUnExp valuisedNeg)
+  ,("approx", ValueUnExp valuisedApprox)
   ]
 
 eval :: Value -> Env -> Value
 eval (ValueIdfr a) e = varLookup a e
+eval (ValueBuiltin f x) e = case eval f e of
+  ValueFailure _ -> ValueFailure "Error: Undefined function"
+  ValueUnExp op -> op $ eval x e
 eval (ValueBinOp name b c) e = case varLookup name e of
   ValueFailure _ -> ValueFailure "Error: Undefined operator"
   ValueBinExp op -> op (eval b e) $ eval c e

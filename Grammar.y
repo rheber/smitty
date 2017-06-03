@@ -70,8 +70,15 @@ Sum :: {Value}
   | Term {$1}
 
 Term :: {Value}
-  : Term termOp Atom {ValueBinOp $2 $1 $3}
+  : Term termOp Factor {ValueBinOp $2 $1 $3}
+  | Factor {$1}
+
+Factor :: {Value}
+  : Atom Args {ValueBuiltin $1 $2}
   | Atom {$1}
+
+Args :: {Value}
+  : '(' Disj ')' {$2}
 
 Idfr :: {Value}
   : identifier {ValueIdfr $1}
