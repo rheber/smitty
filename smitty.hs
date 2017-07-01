@@ -32,14 +32,14 @@ initialEnv = Map.fromList [
   ,("*", ValueBinExp $ valuiseRat (*))
   ,("/", ValueBinExp $ valuiseNonzero (/))
   ,("!", ValueUnExp valuisedNeg)
-  ,("approx", ValueUnExp valuisedApprox)
+  ,("approx", ValueBuiltinExp valuisedApprox)
   ]
 
 eval :: Value -> Env -> Value
 eval (ValueIdfr a) e = varLookup a e
-eval (ValueBuiltin f x) e = case eval f e of
+eval (ValueBuiltin f xs) e = case eval f e of
   ValueFailure _ -> ValueFailure "Error: Undefined function"
-  ValueUnExp op -> op $ eval x e
+  ValueBuiltinExp op -> op $ (flip eval e) <$> xs
 eval (ValueBinOp name b c) e = case varLookup name e of
   ValueFailure _ -> ValueFailure "Error: Undefined operator"
   ValueBinExp op -> op (eval b e) $ eval c e

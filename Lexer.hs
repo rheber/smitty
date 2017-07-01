@@ -29,6 +29,7 @@ data Token
   | TokenSemi
   | TokenQM
   | TokenAt
+  | TokenComma
   | InvalidToken Char
   | MissingQuoteToken
   deriving Show
@@ -82,6 +83,7 @@ lexer ('}':cs) = TokenCB:lexer cs
 lexer (';':cs) = TokenSemi:lexer cs
 lexer ('?':cs) = TokenQM:lexer cs
 lexer ('@':cs) = TokenAt:lexer cs
+lexer (',':cs) = TokenComma:lexer cs
 lexer ('"':cs) = lexString cs
 lexer (c:cs)
   | isSpace c = lexer cs

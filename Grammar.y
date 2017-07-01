@@ -30,6 +30,7 @@ import Value (Value(..))
   ';' {TokenSemi}
   '?' {TokenQM}
   '@' {TokenAt}
+  ',' {TokenComma}
 %%
 
 Stmts :: {Value}
@@ -77,8 +78,13 @@ Factor :: {Value}
   : Atom Args {ValueBuiltin $1 $2}
   | Atom {$1}
 
-Args :: {Value}
-  : '(' Disj ')' {$2}
+Args :: {[Value]}
+  : '(' Arglist ')' {$2}
+
+Arglist :: {[Value]}
+  : {- empty -} {[ValueEmpty]}
+  | Disj {[$1]}
+  | Disj ',' Arglist {$1:$3}
 
 Idfr :: {Value}
   : identifier {ValueIdfr $1}
