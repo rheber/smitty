@@ -75,5 +75,9 @@ valuisedNeg _ = ValueFailure "Type error: Expected boolean"
 
 valuisedApprox :: [Value] -> Value
 valuisedApprox [ValueRat a] = ValueString $ show $ fromRational a
-valuisedApprox (_:_:_) = ValueFailure "Type error: approx expected 1 argument"
-valuisedApprox _ = ValueFailure "Type error: approx expected rational"
+valuisedApprox _ = ValueFailure "Error: approx expected 1 rational argument"
+
+valuisedExp :: [Value] -> Value
+valuisedExp [ValueRat a, ValueRat b] =
+  ValueRat $ toRational $ (fromRational a) ** (fromRational b)
+valuisedExp _ = ValueFailure "Error: exp expected 2 rational arguments"

@@ -4,7 +4,7 @@ import System.IO (stdout)
 
 import Grammar(parseStmt)
 import Lexer (E, lexer)
-import Value (Value(..), printValue, valuisedApprox,
+import Value (Value(..), printValue, valuisedApprox, valuisedExp,
   valuiseBool, valuiseEq, valuiseRat, valuiseNonzero, valuisedNeg)
 
 type Env = Map.Map String Value
@@ -33,6 +33,7 @@ initialEnv = Map.fromList [
   ,("/", ValueBinExp $ valuiseNonzero (/))
   ,("!", ValueUnExp valuisedNeg)
   ,("approx", ValueBuiltinExp valuisedApprox)
+  ,("exp", ValueBuiltinExp valuisedExp)
   ]
 
 eval :: Value -> Env -> Value
