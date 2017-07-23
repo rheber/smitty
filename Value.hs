@@ -22,6 +22,8 @@ data Value
   | ValueUnExp (Value -> Value)
   | ValueBuiltin Value [Value]
   | ValueBuiltinExp ([Value] -> Value)
+  | ValueReturn Value
+  | ValueFuncdef [Value] Value
   | ValueFailure String
   deriving Show
 

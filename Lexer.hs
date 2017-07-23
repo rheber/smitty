@@ -29,6 +29,8 @@ data Token
   | TokenSemi
   | TokenQM
   | TokenAt
+  | TokenBS
+  | TokenDollar
   | TokenComma
   | InvalidToken Char
   | MissingQuoteToken
@@ -76,6 +78,8 @@ lexer (':':':':'=':cs) = TokenReassign:lexer cs
 lexer (':':'=':cs) = TokenInit:lexer cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
 lexer (':':')':cs) = TokenTrue:lexer cs
+lexer ('\\':cs) = TokenBS:lexer cs
+lexer ('$':cs) = TokenDollar:lexer cs
 lexer ('(':cs) = TokenOP:lexer cs
 lexer (')':cs) = TokenCP:lexer cs
 lexer ('{':cs) = TokenOB:lexer cs

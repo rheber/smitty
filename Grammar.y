@@ -23,6 +23,8 @@ import Value (Value(..))
   ':=' {TokenInit}
   ':(' {TokenFalse}
   ':)' {TokenTrue}
+  '\\' {TokenBS}
+  '$' {TokenDollar}
   '(' {TokenOP}
   ')' {TokenCP}
   '{' {TokenOB}
@@ -39,6 +41,7 @@ Stmts :: {Value}
 
 Stmt :: {Value}
   : {- empty -} {ValueEmpty}
+  | '$' Asgn {ValueReturn $2}
   | Asgn {$1}
   | Selection {$1}
   | While {$1}
@@ -78,6 +81,11 @@ Factor :: {Value}
   : Atom Args {ValueBuiltin $1 $2}
   | Atom {$1}
 
+{-
+Args and Idfrs are parenthesised versions of the respective lists.
+Args is used in Factor calls, Idfrs is used in Funcdefs.
+-}
+
 Args :: {[Value]}
   : '(' Arglist ')' {$2}
 
@@ -85,6 +93,17 @@ Arglist :: {[Value]}
   : {- empty -} {[ValueEmpty]}
   | Disj {[$1]}
   | Disj ',' Arglist {$1:$3}
+
+Idfrs :: {[Value]}
+  : '(' Idfrlist ')' {$2}
+
+Idfrlist :: {[Value]}
+  : {- empty -} {[ValueEmpty]}
+  | Idfr {[$1]}
+  | Idfr ',' Idfrlist {$1:$3}
+
+Funcdef :: {Value}
+  : '\\' Idfrs '{' Stmts '}' {ValueFuncdef $2 $4}
 
 Idfr :: {Value}
   : identifier {ValueIdfr $1}
@@ -95,6 +114,7 @@ Atom :: {Value}
   | String {$1}
   | Idfr {$1}
   | Paren {$1}
+  | Funcdef {$1}
 
 Paren :: {Value}
   : '(' Disj ')' {$2}
