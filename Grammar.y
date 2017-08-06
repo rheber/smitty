@@ -78,7 +78,7 @@ Term :: {Value}
   | Factor {$1}
 
 Factor :: {Value}
-  : Atom Args {ValueBuiltin $1 $2}
+  : Atom Args {ValueFunction $1 $2}
   | Atom {$1}
 
 {-

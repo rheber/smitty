@@ -38,9 +38,10 @@ initialEnv = Map.fromList [
 
 eval :: Value -> Env -> Value
 eval (ValueIdfr a) e = varLookup a e
-eval (ValueBuiltin f xs) e = case eval f e of
+eval (ValueFunction f xs) e = case eval f e of
   ValueFailure _ -> ValueFailure "Error: Undefined function"
   ValueBuiltinExp op -> op $ (flip eval e) <$> xs
+  func@_ -> evalFunc func $ localEnv func e xs
 eval (ValueBinOp name b c) e = case varLookup name e of
   ValueFailure _ -> ValueFailure "Error: Undefined operator"
   ValueBinExp op -> op (eval b e) $ eval c e
@@ -49,6 +50,7 @@ eval (ValueUnOp name b) e = case varLookup name e of
   ValueUnExp op -> op $ eval b e
 eval (ValueSeq a v) e = let m = eval a e in case m of
   ValueFailure _ -> m
+  ValueReturn r -> eval r e
   _ -> eval v (exec a e)
 eval (ValueInit name v) e =
   if member name e
@@ -65,6 +67,12 @@ eval w@(ValueWhile u cond v) e = eval (ValueSeq u $ case eval cond (exec u e) of
   ValueBool bl -> if bl then (ValueSeq v w) else ValueEmpty -- Ends empty anyway.
   _ -> ValueFailure "Type error: Expected boolean") e
 eval v _ = v
+
+evalFunc :: Value -> Env -> Value
+evalFunc (ValueFuncdef _ s) e = eval s e
+
+localEnv :: Value -> Env -> [Value] -> Env
+localEnv f@(ValueFuncdef _ s) e xs = e
 
 exec :: Value -> Env -> Env
 exec (ValueSeq a v) e = case (eval a e) of

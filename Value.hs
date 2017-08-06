@@ -20,7 +20,7 @@ data Value
   | ValueBinExp (Value -> Value -> Value)
   | ValueUnOp String Value
   | ValueUnExp (Value -> Value)
-  | ValueBuiltin Value [Value]
+  | ValueFunction Value [Value]
   | ValueBuiltinExp ([Value] -> Value)
   | ValueReturn Value
   | ValueFuncdef [Value] Value
