@@ -4,7 +4,7 @@ import System.IO (stdout)
 
 import Grammar(parseStmt)
 import Lexer (E, lexer)
-import Value (Value(..), printValue, valuisedApprox, valuisedExp,
+import Value (Value(..), vIdfr, printValue, valuisedApprox, valuisedExp,
   valuiseBool, valuiseEq, valuiseRat, valuiseNonzero, valuisedNeg)
 
 type Env = Map.Map String Value
@@ -39,14 +39,14 @@ initialEnv = Map.fromList [
 eval :: Value -> Env -> Value
 eval (ValueIdfr a) e = varLookup a e
 eval (ValueFunction f xs) e = case eval f e of
-  ValueFailure _ -> ValueFailure "Error: Undefined function"
+  ValueFailure _ -> ValueFailure $ "Error: Undefined function " ++ vIdfr f
   ValueBuiltinExp op -> op $ (flip eval e) <$> xs
-  func@_ -> evalFunc func $ localEnv func e xs
+  func@_ -> evalFunc func (localEnv func e xs) xs
 eval (ValueBinOp name b c) e = case varLookup name e of
-  ValueFailure _ -> ValueFailure "Error: Undefined operator"
+  ValueFailure _ -> ValueFailure $ "Error: Undefined operator " ++ show name
   ValueBinExp op -> op (eval b e) $ eval c e
 eval (ValueUnOp name b) e = case varLookup name e of
-  ValueFailure _ -> ValueFailure "Error: Undefined operator"
+  ValueFailure _ -> ValueFailure $ "Error: Undefined operator " ++ show name
   ValueUnExp op -> op $ eval b e
 eval (ValueSeq a v) e = let m = eval a e in case m of
   ValueFailure _ -> m
@@ -68,11 +68,25 @@ eval w@(ValueWhile u cond v) e = eval (ValueSeq u $ case eval cond (exec u e) of
   _ -> ValueFailure "Type error: Expected boolean") e
 eval v _ = v
 
-evalFunc :: Value -> Env -> Value
-evalFunc (ValueFuncdef _ s) e = eval s e
+firstFailure :: [Value] -> Value
+firstFailure [] = ValueEmpty
+firstFailure ((ValueFailure f):xs) = ValueFailure f
+firstFailure (_:xs) = firstFailure xs
+
+evalFunc :: Value -> Env -> [Value] -> Value
+evalFunc (ValueFuncdef params s) e args
+  | elem ValueEmpty params && not (elem ValueEmpty args) ||
+    elem ValueEmpty args && not (elem ValueEmpty params) ||
+    length params /= length args = ValueFailure "Error: Wrong amount of arguments"
+  | otherwise = let f = firstFailure (fmap ((flip eval) e) args) in
+    if f == ValueEmpty then eval s e else f
 
 localEnv :: Value -> Env -> [Value] -> Env
-localEnv f@(ValueFuncdef _ s) e xs = e
+localEnv (ValueFuncdef params _) e args
+  | elem ValueEmpty params && not (elem ValueEmpty args) ||
+    elem ValueEmpty args && not (elem ValueEmpty params) ||
+    length params /= length args = e
+  | otherwise = let m = Map.fromList $ zip (vIdfr <$> params) (fmap ((flip eval) e) args) in union m e
 
 exec :: Value -> Env -> Env
 exec (ValueSeq a v) e = case (eval a e) of

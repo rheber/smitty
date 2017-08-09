@@ -27,10 +27,15 @@ data Value
   | ValueFailure String
   deriving Show
 
+vIdfr :: Value -> String
+vIdfr (ValueIdfr s) = s
+vIdfr x = show x
+
 instance Eq Value where
   (ValueBool a) == (ValueBool b) = a == b
   (ValueRat a) == (ValueRat b) = a == b
   (ValueString a) == (ValueString b) = a == b
+  ValueEmpty == ValueEmpty = True
   _ == _ = False
 instance Ord Value where
   (ValueRat a) <= (ValueRat b) = a <= b
