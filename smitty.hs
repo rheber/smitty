@@ -66,7 +66,12 @@ eval (ValueSelection cond a b) e = case eval cond e of
 eval w@(ValueWhile u cond v) e = eval (ValueSeq u $ case eval cond (exec u e) of
   ValueBool bl -> if bl then (ValueSeq v w) else ValueEmpty -- Ends empty anyway.
   _ -> ValueFailure "Type error: Expected boolean") e
+eval (ValueReturn r) e = ValueReturn $ eval r e
 eval v _ = v
+
+stripReturns :: Value -> Value
+stripReturns (ValueReturn r) = stripReturns r
+stripReturns r = r
 
 firstFailure :: [Value] -> Value
 firstFailure [] = ValueEmpty
@@ -80,6 +85,8 @@ evalFunc (ValueFuncdef params s) e args
     length params /= length args = ValueFailure "Error: Wrong amount of arguments"
   | otherwise = let f = firstFailure (fmap ((flip eval) e) args) in
     if f == ValueEmpty then eval s e else f
+evalFunc (ValueReturn v) e args = ValueReturn $ evalFunc v e args
+evalFunc _ _ _ = ValueFailure "Error evaluating function"
 
 localEnv :: Value -> Env -> [Value] -> Env
 localEnv (ValueFuncdef params _) e args
@@ -121,7 +128,7 @@ repl e oldInput prompt = do
   if parsedStmt /= Left "Syntax error: Unexpected end of input"
   then do
     let (value, env) = run parsedStmt e
-    let s = printValue value
+    let s = printValue $ stripReturns value
     putStr s
     if s /= "" then putStr "\n" else putStr ""
     repl env "" "smitty> "

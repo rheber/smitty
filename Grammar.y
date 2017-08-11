@@ -41,7 +41,7 @@ Stmts :: {Value}
 
 Stmt :: {Value}
   : {- empty -} {ValueEmpty}
-  | '$' Asgn {ValueReturn $2}
+  | '$' Disj {ValueReturn $2}
   | Asgn {$1}
   | Selection {$1}
   | While {$1}
