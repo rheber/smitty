@@ -98,6 +98,7 @@ localEnv (ValueFuncdef params _) e args
 exec :: Value -> Env -> Env
 exec (ValueSeq a v) e = case (eval a e) of
   ValueFailure _ -> e
+  ValueReturn r -> exec r (exec a e)
   _ -> exec v (exec a e)
 exec (ValueInit name v) e = case v of
   ValueFailure _ -> e
