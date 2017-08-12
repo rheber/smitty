@@ -4,37 +4,17 @@ import System.IO (stdout)
 
 import Grammar(parseStmt)
 import Lexer (E, lexer)
-import Value (Value(..), vIdfr, printValue, valuisedApprox, valuisedExp,
-  valuiseBool, valuiseEq, valuiseRat, valuiseNonzero, valuisedNeg)
+import Env (Env(..), varInsert, varLookup, varMember, initialEnv)
+import Value (Value(..), vIdfr, printValue)
 
-type Env = Map.Map String Value
-
-varLookup :: String -> Env -> Value
-varLookup name e = Map.findWithDefault
-  (ValueFailure "Error: Variable used before initialised") name e
-
-emptyEnv :: Env
-emptyEnv = Map.empty
-
--- Environment loaded with standard operations.
-initialEnv :: Env
-initialEnv = Map.fromList [
-  ("||", ValueBinExp $ valuiseBool (||))
-  ,("&&", ValueBinExp $ valuiseBool (&&))
-  ,("==", ValueBinExp $ valuiseEq (==))
-  ,("!=", ValueBinExp $ valuiseEq (/=))
-  ,("<", ValueBinExp $ valuiseEq (<))
-  ,("<=", ValueBinExp $ valuiseEq (<=))
-  ,(">", ValueBinExp $ valuiseEq (>))
-  ,(">=", ValueBinExp $ valuiseEq (>=))
-  ,("+", ValueBinExp $ valuiseRat (+))
-  ,("-", ValueBinExp $ valuiseRat (-))
-  ,("*", ValueBinExp $ valuiseRat (*))
-  ,("/", ValueBinExp $ valuiseNonzero (/))
-  ,("!", ValueUnExp valuisedNeg)
-  ,("approx", ValueBuiltinExp valuisedApprox)
-  ,("exp", ValueBuiltinExp valuisedExp)
-  ]
+localEnv :: Value -> Env -> [Value] -> Env
+localEnv (ValueFuncdef params _) e@(Env m q) args
+  | elem ValueEmpty params && not (elem ValueEmpty args) ||
+    elem ValueEmpty args && not (elem ValueEmpty params) ||
+    length params /= length args = e
+  | otherwise =
+    let m' = Map.fromList $ zip (vIdfr <$> params) (fmap ((flip eval) e) args)
+    in Env (union m' m) q
 
 eval :: Value -> Env -> Value
 eval (ValueIdfr a) e = varLookup a e
@@ -53,11 +33,11 @@ eval (ValueSeq a v) e = let m = eval a e in case m of
   ValueReturn r -> eval r e
   _ -> eval v (exec a e)
 eval (ValueInit name v) e =
-  if member name e
+  if varMember name e
   then ValueFailure "Error: Variable already initialised"
   else eval v e
 eval (ValueReasgn name v) e =
-  if member name e
+  if varMember name e
   then eval v e
   else ValueFailure "Error: Variable not initialised"
 eval (ValueSelection cond a b) e = case eval cond e of
@@ -88,13 +68,6 @@ evalFunc (ValueFuncdef params s) e args
 evalFunc (ValueReturn v) e args = ValueReturn $ evalFunc v e args
 evalFunc _ _ _ = ValueFailure "Error evaluating function"
 
-localEnv :: Value -> Env -> [Value] -> Env
-localEnv (ValueFuncdef params _) e args
-  | elem ValueEmpty params && not (elem ValueEmpty args) ||
-    elem ValueEmpty args && not (elem ValueEmpty params) ||
-    length params /= length args = e
-  | otherwise = let m = Map.fromList $ zip (vIdfr <$> params) (fmap ((flip eval) e) args) in union m e
-
 exec :: Value -> Env -> Env
 exec (ValueSeq a v) e = case (eval a e) of
   ValueFailure _ -> e
@@ -102,10 +75,10 @@ exec (ValueSeq a v) e = case (eval a e) of
   _ -> exec v (exec a e)
 exec (ValueInit name v) e = case v of
   ValueFailure _ -> e
-  _ -> if member name e then e else Map.insert name (eval v e) e
+  _ -> if varMember name e then e else varInsert name (eval v e) e
 exec (ValueReasgn name v) e = case v of
   ValueFailure _ -> e
-  _ -> if member name e then Map.insert name (eval v e) e else e
+  _ -> if varMember name e then varInsert name (eval v e) e else e
 exec (ValueSelection cond a b) e = case eval cond e of
   ValueBool bl -> exec (if bl then a else b) e
   _ -> e
