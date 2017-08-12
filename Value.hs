@@ -56,7 +56,7 @@ printValue ValueEmpty = ""
 printValue (ValueBool False) = ":("
 printValue (ValueBool True) = ":)"
 printValue (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
-printValue (ValueString s) = s -- Escapes not interpreted here.
+printValue (ValueString s) = "\"" ++ s ++ "\"" -- Escapes in s not interpreted.
 printValue (ValueFailure s) = s
 printValue v = show v
 
