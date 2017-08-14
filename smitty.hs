@@ -4,7 +4,8 @@ import System.IO (stdout)
 
 import Grammar(parseStmt)
 import Lexer (E, lexer)
-import Env (Env(..), varInsert, varLookup, varMember, initialEnv)
+import Env (Env(..), varInsert, varLookup, varMember,
+  qOutput, dq, printq, initialEnv)
 import Value (Value(..), vIdfr, printValue)
 
 localEnv :: Value -> Env -> [Value] -> Env
@@ -69,6 +70,10 @@ evalFunc (ValueReturn v) e args = ValueReturn $ evalFunc v e args
 evalFunc _ _ _ = ValueFailure "Error evaluating function"
 
 exec :: Value -> Env -> Env
+exec (ValueFunction f xs) e = case eval f e of
+  ValueFailure _ -> e
+  ValueBuiltinExp op -> exec (op $ (flip eval e) <$> xs) e
+  func@_ -> exec (evalFunc func (localEnv func e xs) xs) e
 exec (ValueSeq a v) e = case (eval a e) of
   ValueFailure _ -> e
   ValueReturn r -> exec r (exec a e)
@@ -85,6 +90,7 @@ exec (ValueSelection cond a b) e = case eval cond e of
 exec w@(ValueWhile u cond v) e = exec (ValueSeq u $ case eval cond (exec u e) of
   ValueBool bl -> if bl then (ValueSeq v w) else ValueEmpty
   _ -> ValueEmpty) e
+exec v@(ValueOutput _) e = qOutput v e
 exec _ e = e
 
 run :: E Value -> Env -> (Value, Env)
@@ -103,9 +109,11 @@ repl e oldInput prompt = do
   then do
     let (value, env) = run parsedStmt e
     let s = printValue $ stripReturns value
+    let (env', q) = dq env
+    printq q
     putStr s
     if s /= "" then putStr "\n" else putStr ""
-    repl env "" "smitty> "
+    repl env' "" "smitty> "
   else repl e inputString "...> "
 
 main :: IO ()

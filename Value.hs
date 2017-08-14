@@ -10,6 +10,7 @@ data Value
   | ValueBool Bool
   | ValueRat Rational
   | ValueString String
+  | ValueOutput String
   | ValueIdfr String
   | ValueReasgn String Value
   | ValueInit String Value
@@ -51,8 +52,10 @@ instance Ord Value where
   (ValueString a) > (ValueString b) = a > b
   _ > _ = False
 
+-- What the REPL prints.
 printValue :: Value -> String
 printValue ValueEmpty = ""
+printValue (ValueOutput _) = ""
 printValue (ValueBool False) = ":("
 printValue (ValueBool True) = ":)"
 printValue (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
@@ -88,3 +91,7 @@ valuisedExp :: [Value] -> Value
 valuisedExp [ValueRat a, ValueRat b] =
   ValueRat $ toRational $ (fromRational a) ** (fromRational b)
 valuisedExp _ = ValueFailure "Error: exp expected 2 rational arguments"
+
+valuisedPrint :: [Value] -> Value
+valuisedPrint [ValueString s] = ValueOutput s
+valuisedPrint _ = ValueFailure "Error: print expected 1 string argument"
