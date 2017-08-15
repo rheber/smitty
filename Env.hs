@@ -19,6 +19,11 @@ varMember name (Env m _) = Map.member name m
 varInsert :: String -> Value -> Env -> Env
 varInsert name v (Env m q) = Env (Map.insert name v m) q
 
+-- Add values to an env.
+varUnion :: [String] -> [Value] -> Env -> Env
+varUnion names vals (Env oldV oldQ) =
+  Env (union (Map.fromList $ Prelude.zip names vals) oldV) oldQ
+
 qOutput :: Value -> Env -> Env
 qOutput v (Env m q) = Env m (q |> v)
 

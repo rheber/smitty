@@ -1,21 +1,18 @@
-import Data.Map as Map
 import GHC.IO.Handle (hFlush)
 import System.IO (stdout)
 
 import Grammar(parseStmt)
 import Lexer (E, lexer)
-import Env (Env(..), varInsert, varLookup, varMember,
+import Env (Env(..), varInsert, varLookup, varMember, varUnion,
   qOutput, dq, printq, initialEnv)
 import Value (Value(..), vIdfr, printValue)
 
 localEnv :: Value -> Env -> [Value] -> Env
-localEnv (ValueFuncdef params _) e@(Env m q) args
+localEnv (ValueFuncdef params _) e args
   | elem ValueEmpty params && not (elem ValueEmpty args) ||
     elem ValueEmpty args && not (elem ValueEmpty params) ||
     length params /= length args = e
-  | otherwise =
-    let m' = Map.fromList $ zip (vIdfr <$> params) (fmap ((flip eval) e) args)
-    in Env (union m' m) q
+  | otherwise = varUnion (vIdfr <$> params) (((flip eval) e) <$> args) e
 
 eval :: Value -> Env -> Value
 eval (ValueIdfr a) e = varLookup a e
