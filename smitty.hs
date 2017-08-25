@@ -6,6 +6,7 @@ import Lexer (E, lexer)
 import Env (Env(..), varInsert, varLookup, varMember, varUnion,
   qOutput, dq, printq, initialEnv)
 import Value (Value(..), vIdfr, printValue)
+import Getopt (Opts(..), defaultOpts, parseArgs)
 
 localEnv :: Value -> Env -> [Value] -> Env
 localEnv (ValueFuncdef params _) e args
@@ -114,4 +115,15 @@ repl e oldInput prompt = do
   else repl e inputString "...> "
 
 main :: IO ()
-main = repl initialEnv "" "smitty> "
+main = do
+  actions <- parseArgs
+  opts <- foldl (>>=) (return defaultOpts) actions
+  let Opts {optEval = evalCode} = opts
+  if evalCode == "" then repl initialEnv "" "smitty> " else do
+    let parsedStmt = parseStmt $ lexer evalCode
+    let (value, env) = run parsedStmt initialEnv
+    let (_, q) = dq env
+    printq q
+    case value of
+      ValueFailure s -> putStr s
+      _ -> return ()
