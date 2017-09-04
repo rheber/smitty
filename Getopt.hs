@@ -4,9 +4,9 @@ import System.Console.GetOpt
 import System.Environment (getArgs)
 import System.Exit (ExitCode(ExitSuccess), exitWith)
 
-data Opts = Opts {optEval :: String}
+data Opts = Opts {optEval :: Maybe String}
 
-defaultOpts = Opts {optEval = ""}
+defaultOpts = Opts {optEval = Nothing}
 
 showVersion :: Opts -> IO Opts
 showVersion _ = putStrLn "smitty v0.1" >> exitWith ExitSuccess
@@ -17,7 +17,7 @@ options =
    Option "v" ["version"] (NoArg showVersion) "show version number"]
 
 evalAction :: String -> Opts -> IO Opts
-evalAction arg opt = return opt {optEval = arg}
+evalAction arg opt = return opt {optEval = Just arg}
 
 -- Simply parses the options.
 runGetOpt :: [String] -> IO ([Opts -> IO Opts], [String])

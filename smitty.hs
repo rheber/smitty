@@ -118,8 +118,8 @@ main :: IO ()
 main = do
   actions <- parseArgs
   opts <- foldl (>>=) (return defaultOpts) actions
-  let Opts {optEval = evalCode} = opts
-  if evalCode == "" then repl initialEnv "" "smitty> " else do
+  if optEval opts == Nothing then repl initialEnv "" "smitty> " else do
+    let Just evalCode = optEval opts
     let parsedStmt = parseStmt $ lexer evalCode
     let (value, env) = run parsedStmt initialEnv
     let (_, q) = dq env
