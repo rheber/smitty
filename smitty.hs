@@ -114,16 +114,22 @@ repl e oldInput prompt = do
     repl env' "" "smitty> "
   else repl e inputString "...> "
 
+-- Evaluate chunk of code with no code following.
+-- Contrast with repl where environment has to be handed forwards.
+evalAll :: String -> IO ()
+evalAll code = do
+  let parsedStmt = parseStmt $ lexer code
+  let (value, env) = run parsedStmt initialEnv
+  let (_, q) = dq env
+  printq q
+  case value of
+    ValueFailure s -> putStr s
+    _ -> return ()
+
+-- Prioritises files over one-liners.
 main :: IO ()
 main = do
   actions <- parseArgs
   opts <- foldl (>>=) (return defaultOpts) actions
-  if optEval opts == Nothing then repl initialEnv "" "smitty> " else do
-    let Just evalCode = optEval opts
-    let parsedStmt = parseStmt $ lexer evalCode
-    let (value, env) = run parsedStmt initialEnv
-    let (_, q) = dq env
-    printq q
-    case value of
-      ValueFailure s -> putStr s
-      _ -> return ()
+  maybe (maybe (repl initialEnv "" "smitty> ") evalAll $ optEval opts)
+    (\x -> readFile x >>= evalAll) $ optFile opts
