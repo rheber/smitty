@@ -67,11 +67,21 @@ evalFunc (ValueFuncdef params s) e args
 evalFunc (ValueReturn v) e args = ValueReturn $ evalFunc v e args
 evalFunc _ _ _ = ValueFailure "Error evaluating function"
 
+execFunc :: Value -> Env -> [Value] -> Env
+execFunc (ValueFuncdef params s) e args
+  | elem ValueEmpty params && not (elem ValueEmpty args) ||
+    elem ValueEmpty args && not (elem ValueEmpty params) ||
+    length params /= length args = e
+  | otherwise = let f = firstFailure (fmap ((flip eval) e) args) in
+    if f == ValueEmpty then exec s e else e
+execFunc (ValueReturn v) e args = execFunc v e args
+execFunc _ e _ = e
+
 exec :: Value -> Env -> Env
 exec (ValueFunction f xs) e = case eval f e of
   ValueFailure _ -> e
   ValueBuiltinExp op -> exec (op $ (flip eval e) <$> xs) e
-  func@_ -> exec (evalFunc func (localEnv func e xs) xs) e
+  func@_ -> execFunc func (localEnv func e xs) xs
 exec (ValueSeq a v) e = case (eval a e) of
   ValueFailure _ -> e
   ValueReturn r -> exec r (exec a e)
