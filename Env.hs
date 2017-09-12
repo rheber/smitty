@@ -3,7 +3,7 @@ module Env where
 import Data.Map as Map
 import Data.Sequence as Seq
 
-import Value (Value(..), valuisedApprox, valuisedExp, valuisedPrint,
+import Value (Value(..), valuisedApprox, valuisedExp, valuisedFloor, valuisedPrint,
   valuiseBool, valuiseEq, valuiseRat, valuiseNonzero, valuisedNeg)
 
 -- Variables and output queue.
@@ -62,5 +62,6 @@ initialEnv = Env (Map.fromList [
   ,("!", ValueUnExp valuisedNeg)
   ,("approx", ValueBuiltinExp valuisedApprox)
   ,("exp", ValueBuiltinExp valuisedExp)
+  ,("floor", ValueBuiltinExp valuisedFloor)
   ,("print", ValueBuiltinExp valuisedPrint)
   ]) Seq.empty

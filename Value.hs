@@ -92,6 +92,10 @@ valuisedExp [ValueRat a, ValueRat b] =
   ValueRat $ toRational $ (fromRational a) ** (fromRational b)
 valuisedExp _ = ValueFailure "Error: exp expected 2 rational arguments"
 
+valuisedFloor :: [Value] -> Value
+valuisedFloor [ValueRat a] = ValueRat $ toRational $ floor a
+valuisedFloor _ = ValueFailure "Error: floor expected 1 rational argument"
+
 valuisedPrint :: [Value] -> Value
 valuisedPrint [ValueString s] = ValueOutput s
 valuisedPrint _ = ValueFailure "Error: print expected 1 string argument"
