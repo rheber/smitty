@@ -19,6 +19,9 @@ varMember name (Env m _) = Map.member name m
 varInsert :: String -> Value -> Env -> Env
 varInsert name v (Env m q) = Env (Map.insert name v m) q
 
+varDelete :: String -> Env -> Env
+varDelete name (Env m q) = Env (Map.delete name m) q
+
 -- Add values to an env.
 varUnion :: [String] -> [Value] -> Env -> Env
 varUnion names vals (Env oldV oldQ) =

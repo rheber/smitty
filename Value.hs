@@ -14,6 +14,7 @@ data Value
   | ValueIdfr String
   | ValueReasgn String Value
   | ValueInit String Value
+  | ValueDelete String
   | ValueSeq Value Value
   | ValueSelection Value Value Value
   | ValueWhile Value Value Value

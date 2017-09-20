@@ -3,7 +3,7 @@ import System.IO (stdout)
 
 import Grammar(parseStmt)
 import Lexer (E, lexer)
-import Env (Env(..), varInsert, varLookup, varMember, varUnion,
+import Env (Env(..), varInsert, varDelete, varLookup, varMember, varUnion,
   qOutput, dq, printq, initialEnv)
 import Value (Value(..), vIdfr, printValue)
 import Getopt (Opts(..), defaultOpts, parseArgs)
@@ -39,6 +39,7 @@ eval (ValueReasgn name v) e =
   if varMember name e
   then eval v e
   else ValueFailure "Error: Variable not initialised"
+eval (ValueDelete _) _ = ValueEmpty
 eval (ValueSelection cond a b) e = case eval cond e of
   ValueBool bl -> eval (if bl then a else b) e
   _ -> ValueFailure "Type error: Expected boolean"
@@ -92,6 +93,7 @@ exec (ValueInit name v) e = case v of
 exec (ValueReasgn name v) e = case v of
   ValueFailure _ -> e
   _ -> if varMember name e then varInsert name (eval v e) e else e
+exec (ValueDelete name) m = varDelete name m
 exec (ValueSelection cond a b) e = case eval cond e of
   ValueBool bl -> exec (if bl then a else b) e
   _ -> e

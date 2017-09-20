@@ -32,6 +32,7 @@ import Value (Value(..))
   ';' {TokenSemi}
   '?' {TokenQM}
   '@' {TokenAt}
+  '~' {TokenTilde}
   ',' {TokenComma}
 %%
 
@@ -44,6 +45,7 @@ Stmt :: {Value}
   | '$' Disj {ValueReturn $2}
   | '$' {ValueReturn ValueEmpty}
   | Asgn {$1}
+  | Delete {$1}
   | Selection {$1}
   | While {$1}
 
@@ -57,6 +59,9 @@ Asgn :: {Value}
   : identifier '::=' Disj {ValueReasgn $1 $3}
   | identifier ':=' Disj {ValueInit $1 $3}
   | Disj {$1}
+
+Delete :: {Value}
+  : '(' '~' identifier ')' {ValueDelete $3}
 
 Disj :: {Value}
   : Disj disjOp Conj {ValueBinOp $2 $1 $3}
