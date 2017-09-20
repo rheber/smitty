@@ -27,6 +27,7 @@ data Token
   | TokenOB
   | TokenCB
   | TokenSemi
+  | TokenElse
   | TokenQM
   | TokenAt
   | TokenBS
@@ -77,6 +78,7 @@ lexer [] = [] -- End of input.
 lexer ('#':cs) = lexer $ tail $ dropWhile (\x -> x /= '#') cs -- Comments.
 lexer (':':':':'=':cs) = TokenReassign:lexer cs
 lexer (':':'=':cs) = TokenInit:lexer cs
+lexer (':':':':cs) = TokenElse:lexer cs
 lexer (':':'(':cs) = TokenFalse:lexer cs
 lexer (':':')':cs) = TokenTrue:lexer cs
 lexer ('\\':cs) = TokenBS:lexer cs

@@ -21,6 +21,7 @@ import Value (Value(..))
   termOp {TokenTermOp $$}
   '::=' {TokenReassign}
   ':=' {TokenInit}
+  '::' {TokenElse}
   ':(' {TokenFalse}
   ':)' {TokenTrue}
   '\\' {TokenBS}
@@ -37,23 +38,31 @@ import Value (Value(..))
 %%
 
 Stmts :: {Value}
-  : Stmt ';' Stmts {ValueSeq $1 $3}
-  | Stmt {$1}
+  : LineStmt ';' Stmts {ValueSeq $1 $3}
+  | While Stmts {ValueSeq $1 $2}
+  | Selection Stmts {ValueSeq $1 $2}
+  | LineStmt {$1}
 
-Stmt :: {Value}
+LineStmt :: {Value}
   : {- empty -} {ValueEmpty}
   | '$' Disj {ValueReturn $2}
   | '$' {ValueReturn ValueEmpty}
   | Asgn {$1}
   | Delete {$1}
-  | Selection {$1}
-  | While {$1}
 
 Selection :: {Value}
-  : '?' Paren '{' Stmts '}' '{' Stmts '}' {ValueSelection $2 $4 $7}
+  : '?' Paren '{' Stmts '}' '::' SelectionTrailer {ValueSelection $2 $4 $7}
+  | '?' Paren '{' Stmts '}' {ValueSelection $2 $4 ValueEmpty}
+
+SelectionTrailer :: {Value}
+  : '{' Stmts '}' {$2}
+  | Paren '{' Stmts '}' {ValueSelection $1 $3 ValueEmpty}
+  | Paren '{' Stmts '}' '::' SelectionTrailer {ValueSelection $1 $3 $6}
 
 While :: {Value}
   : '@' '{' Stmts '}' Paren '{' Stmts '}' {ValueWhile $3 $5 $7}
+  | '@' Paren '{' Stmts '}' {ValueWhile ValueEmpty $2 $4}
+  | '@' '{' Stmts '}' Paren {ValueWhile $3 $5 ValueEmpty}
 
 Asgn :: {Value}
   : identifier '::=' Disj {ValueReasgn $1 $3}

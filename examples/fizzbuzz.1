@@ -6,23 +6,19 @@ mod := \(a, b) {
 
 fizzbuzz := \(n) {
   i := 0;
-  @{}(i < n) {
+  @(i < n) {
     ?(mod(i, 15)==0) {
       print("FizzBuzz\n");
-    } {
-      ?(mod(i, 3)==0) {
-        print("Fizz\n");
-      } {
-        ?(mod(i, 5)==0) {
-          print("Buzz\n");
-        } {
-          print(approx(i));
-          print("\n");
-        }
-      }
-    };
+    } ::(mod(i, 3)==0) {
+      print("Fizz\n");
+    } ::(mod(i, 5)==0) {
+      print("Buzz\n");
+    } :: {
+      print(approx(i));
+      print("\n");
+    }
     i ::= i + 1;
-  };
+  }
 };
 
 fizzbuzz(20);
