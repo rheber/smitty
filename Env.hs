@@ -7,7 +7,7 @@ import System.Exit (exitWith)
 import Value
 
 -- Variables and output queue.
-data Env = Env (Map.Map String Value) (Seq.Seq QIO) deriving Show
+data Env = Env {vars :: (Map.Map String Value), ioq :: (Seq.Seq QIO)} deriving Show
 
 varLookup :: String -> Env -> Value
 varLookup name (Env m _) = Map.findWithDefault

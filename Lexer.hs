@@ -51,8 +51,8 @@ lexIdfr cs = case span isAlphaNum cs of
   (idfr, rest) -> TokenIdfr idfr:lexer rest
 
 lexInteger :: String -> [Token]
-lexInteger cs = TokenRational (toRational $ read num):lexer rest
-  where (num,rest) = span isDigit cs
+lexInteger cs = case span isDigit cs of
+ (num, rest) -> TokenRational (toRational $ read num):lexer rest
 
 lexOp :: String -> [Token]
 lexOp s = case span isOpchar s of

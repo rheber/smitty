@@ -2,3 +2,4 @@ grammar.hs
 *.exe
 *.hi
 *.o
+*.prof

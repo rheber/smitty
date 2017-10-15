@@ -10,9 +10,7 @@ import Getopt (Opts(..), defaultOpts, parseArgs)
 
 localEnv :: Value -> Env -> [Value] -> Env
 localEnv (ValueFuncdef params _) e args
-  | elem ValueEmpty params && not (elem ValueEmpty args) ||
-    elem ValueEmpty args && not (elem ValueEmpty params) ||
-    length params /= length args = e
+  | wrongArgs params args = e
   | otherwise = varUnion (vIdfr <$> params) (((flip eval) e) <$> args) e
 
 eval :: Value -> Env -> Value
@@ -58,11 +56,14 @@ firstFailure [] = ValueEmpty
 firstFailure ((ValueFailure f):xs) = ValueFailure f
 firstFailure (_:xs) = firstFailure xs
 
+wrongArgs params args =
+  let p = elem ValueEmpty params
+      a = elem ValueEmpty args
+  in a && not p || p && not a || length params /= length args
+
 evalFunc :: Value -> Env -> [Value] -> Value
 evalFunc (ValueFuncdef params s) e args
-  | elem ValueEmpty params && not (elem ValueEmpty args) ||
-    elem ValueEmpty args && not (elem ValueEmpty params) ||
-    length params /= length args = ValueFailure "Error: Wrong amount of arguments"
+  | wrongArgs params args = ValueFailure "Error: Wrong amount of arguments"
   | otherwise = let f = firstFailure (fmap ((flip eval) e) args) in
     if f == ValueEmpty then eval s e else f
 evalFunc (ValueReturn v) e args = ValueReturn $ evalFunc v e args
@@ -70,11 +71,10 @@ evalFunc _ _ _ = ValueFailure "Error evaluating function"
 
 execFunc :: Value -> Env -> [Value] -> Env
 execFunc (ValueFuncdef params s) e args
-  | elem ValueEmpty params && not (elem ValueEmpty args) ||
-    elem ValueEmpty args && not (elem ValueEmpty params) ||
-    length params /= length args = e
-  | otherwise = let f = firstFailure (fmap ((flip eval) e) args) in
-    if f == ValueEmpty then exec s e else e
+  | wrongArgs params args = e
+  | otherwise = case firstFailure (fmap ((flip eval) e) args) of
+    ValueEmpty -> exec s e
+    _ -> e
 execFunc (ValueReturn v) e args = execFunc v e args
 execFunc _ e _ = e
 
@@ -130,10 +130,8 @@ repl e oldInput prompt = do
 -- Contrast with repl where environment has to be handed forwards.
 evalAll :: String -> IO ()
 evalAll code = do
-  let parsedStmt = parseStmt $ lexer code
-  let (value, env) = run parsedStmt initialEnv
-  let (_, q) = dq env
-  processq q
+  let (value, env) = run (parseStmt $ lexer code) initialEnv
+  processq $ ioq env
   case value of
     ValueFailure s -> putStr s
     _ -> return ()
@@ -141,7 +139,6 @@ evalAll code = do
 -- Prioritises files over one-liners.
 main :: IO ()
 main = do
-  actions <- parseArgs
-  opts <- foldl (>>=) (return defaultOpts) actions
+  opts <- parseArgs >>= (foldl (>>=) (return defaultOpts))
   maybe (maybe (repl initialEnv "" "smitty> ") evalAll $ optEval opts)
     (\x -> readFile x >>= evalAll) $ optFile opts

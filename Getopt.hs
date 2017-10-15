@@ -22,17 +22,15 @@ evalAction arg opt = return opt {optEval = Just arg}
 fileAction :: String -> Opts -> IO Opts
 fileAction arg opt = return opt {optFile = Just arg}
 
--- Simply parses the options.
-runGetOpt :: [String] -> IO ([Opts -> IO Opts], [String])
+-- Parses the given arguments, returning options.
+-- Non-options are thrown away.
+runGetOpt :: [String] -> IO [Opts -> IO Opts]
 runGetOpt args =
   case getOpt Permute options args of
-    (o,n,[])   -> return (o,n)
+    (o,_,[])   -> return o
     (_,_,errs) -> ioError $ userError $ concat errs ++ usageInfo header options
       where header = "Options:"
 
--- Get and parse args.
+-- Get command-line arguments, parse them and return options to perform actions on.
 parseArgs :: IO [Opts -> IO Opts]
-parseArgs = do
-  args <- getArgs
-  (actions, _) <- runGetOpt args
-  return actions
+parseArgs = getArgs >>= runGetOpt
