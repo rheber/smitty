@@ -4,7 +4,7 @@ import System.IO (stdout)
 import Grammar(parseStmt)
 import Lexer (E, lexer)
 import Env (Env(..), varInsert, varDelete, varLookup, varMember, varUnion,
-  qOutput, dq, printq, initialEnv)
+  qIO, dq, processq, initialEnv)
 import Value (Value(..), vIdfr, printValue)
 import Getopt (Opts(..), defaultOpts, parseArgs)
 
@@ -100,7 +100,7 @@ exec (ValueSelection cond a b) e = case eval cond e of
 exec w@(ValueWhile u cond v) e = exec (ValueSeq u $ case eval cond (exec u e) of
   ValueBool bl -> if bl then (ValueSeq v w) else ValueEmpty
   _ -> ValueEmpty) e
-exec v@(ValueOutput _) e = qOutput v e
+exec (ValueIO i) e = qIO i e
 exec _ e = e
 
 run :: E Value -> Env -> (Value, Env)
@@ -120,7 +120,7 @@ repl e oldInput prompt = do
     let (value, env) = run parsedStmt e
     let s = printValue $ stripReturns value
     let (env', q) = dq env
-    printq q
+    processq q
     putStr s
     if s /= "" then putStr "\n" else putStr ""
     repl env' "" "smitty> "
@@ -133,7 +133,7 @@ evalAll code = do
   let parsedStmt = parseStmt $ lexer code
   let (value, env) = run parsedStmt initialEnv
   let (_, q) = dq env
-  printq q
+  processq q
   case value of
     ValueFailure s -> putStr s
     _ -> return ()

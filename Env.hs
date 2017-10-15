@@ -3,11 +3,10 @@ module Env where
 import Data.Map as Map
 import Data.Sequence as Seq
 
-import Value (Value(..), valuisedApprox, valuisedExp, valuisedFloor, valuisedPrint,
-  valuiseBool, valuiseEq, valuiseRat, valuiseNonzero, valuisedNeg)
+import Value
 
 -- Variables and output queue.
-data Env = Env (Map.Map String Value) (Seq.Seq Value) deriving Show
+data Env = Env (Map.Map String Value) (Seq.Seq QIO) deriving Show
 
 varLookup :: String -> Env -> Value
 varLookup name (Env m _) = Map.findWithDefault
@@ -27,14 +26,16 @@ varUnion :: [String] -> [Value] -> Env -> Env
 varUnion names vals (Env oldV oldQ) =
   Env (union (Map.fromList $ Prelude.zip names vals) oldV) oldQ
 
-qOutput :: Value -> Env -> Env
-qOutput v (Env m q) = Env m (q |> v)
+-- Put something into the IO queue.
+qIO :: QIO -> Env -> Env
+qIO i (Env m q) = Env m (q |> i)
 
-dq :: Env -> (Env, Seq.Seq Value)
+-- Split the queue from the environment.
+dq :: Env -> (Env, Seq.Seq QIO)
 dq (Env m q) = ((Env m Seq.empty), q)
 
-printq :: Seq.Seq Value -> IO ()
-printq q = mapM_ (\(ValueOutput s) -> printOutput s) q
+processq :: Seq.Seq QIO -> IO ()
+processq q = mapM_ (\(Output s) -> printOutput s) q
 
 printOutput :: String -> IO()
 printOutput "" = return ()

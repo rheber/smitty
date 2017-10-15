@@ -10,7 +10,7 @@ data Value
   | ValueBool Bool
   | ValueRat Rational
   | ValueString String
-  | ValueOutput String
+  | ValueIO QIO
   | ValueIdfr String
   | ValueReasgn String Value
   | ValueInit String Value
@@ -27,6 +27,12 @@ data Value
   | ValueReturn Value
   | ValueFuncdef [Value] Value
   | ValueFailure String
+  deriving Show
+
+-- Something that can be put into the IO queue.
+data QIO
+  = Output String
+  | Quit Int
   deriving Show
 
 vIdfr :: Value -> String
@@ -56,7 +62,7 @@ instance Ord Value where
 -- What the REPL prints.
 printValue :: Value -> String
 printValue ValueEmpty = ""
-printValue (ValueOutput _) = ""
+printValue (ValueIO _) = ""
 printValue (ValueBool False) = ":("
 printValue (ValueBool True) = ":)"
 printValue (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
@@ -98,5 +104,5 @@ valuisedFloor [ValueRat a] = ValueRat $ toRational $ floor a
 valuisedFloor _ = ValueFailure "Error: floor expected 1 rational argument"
 
 valuisedPrint :: [Value] -> Value
-valuisedPrint [ValueString s] = ValueOutput s
+valuisedPrint [ValueString s] = ValueIO $ Output s
 valuisedPrint _ = ValueFailure "Error: print expected 1 string argument"
