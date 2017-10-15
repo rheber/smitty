@@ -2,6 +2,7 @@ module Env where
 
 import Data.Map as Map
 import Data.Sequence as Seq
+import System.Exit (exitWith)
 
 import Value
 
@@ -35,7 +36,11 @@ dq :: Env -> (Env, Seq.Seq QIO)
 dq (Env m q) = ((Env m Seq.empty), q)
 
 processq :: Seq.Seq QIO -> IO ()
-processq q = mapM_ (\(Output s) -> printOutput s) q
+processq = mapM_ process'
+
+process' :: QIO -> IO ()
+process' (Output s) = printOutput s
+process' (Quit d) = exitWith d
 
 printOutput :: String -> IO()
 printOutput "" = return ()
@@ -68,4 +73,5 @@ initialEnv = Env (Map.fromList [
   ,("exp", ValueBuiltinExp valuisedExp)
   ,("floor", ValueBuiltinExp valuisedFloor)
   ,("print", ValueBuiltinExp valuisedPrint)
+  ,("quit", ValueBuiltinExp valuisedQuit)
   ]) Seq.empty

@@ -1,6 +1,7 @@
 module Value where
 
 import Data.Ratio (numerator, denominator)
+import System.Exit (ExitCode(..))
 
 instance Show (a -> b) where
   showsPrec _ _ = showString "<function>"
@@ -32,7 +33,7 @@ data Value
 -- Something that can be put into the IO queue.
 data QIO
   = Output String
-  | Quit Int
+  | Quit ExitCode
   deriving Show
 
 vIdfr :: Value -> String
@@ -106,3 +107,10 @@ valuisedFloor _ = ValueFailure "Error: floor expected 1 rational argument"
 valuisedPrint :: [Value] -> Value
 valuisedPrint [ValueString s] = ValueIO $ Output s
 valuisedPrint _ = ValueFailure "Error: print expected 1 string argument"
+
+valuisedQuit :: [Value] -> Value
+valuisedQuit [ValueRat a]
+  | a == 0 = ValueIO $ Quit ExitSuccess
+  | (denominator a) == 1
+    = ValueIO $ Quit $ ExitFailure $ fromIntegral $ numerator a
+valuisedQuit _ = ValueFailure "Error: print expected 1 integer argument"
