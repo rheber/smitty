@@ -120,10 +120,10 @@ repl e oldInput prompt = do
     let (value, env) = run parsedStmt e
     let s = printValue $ stripReturns value
     let (env', q) = dq env
-    processq q
+    env'' <- processq q env'
     putStr s
     if s /= "" then putStr "\n" else putStr ""
-    repl env' "" "smitty> "
+    repl env'' "" "smitty> "
   else repl e inputString "...> "
 
 -- Evaluate chunk of code with no code following.
@@ -131,7 +131,7 @@ repl e oldInput prompt = do
 evalAll :: String -> IO ()
 evalAll code = do
   let (value, env) = run (parseStmt $ lexer code) initialEnv
-  processq $ ioq env
+  processq (ioq env) env
   case value of
     ValueFailure s -> putStr s
     _ -> return ()

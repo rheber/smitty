@@ -35,12 +35,18 @@ qIO i (Env m q) = Env m (q |> i)
 dq :: Env -> (Env, Seq.Seq QIO)
 dq (Env m q) = ((Env m Seq.empty), q)
 
-processq :: Seq.Seq QIO -> IO ()
-processq = mapM_ process'
+processq :: Seq.Seq QIO -> Env -> IO Env
+processq xs e
+  | Seq.null xs  = return e
+  | otherwise = case (Seq.splitAt 1 xs) of
+    (h, t) -> (process' (Seq.index h 0) e) >>= processq t
 
-process' :: QIO -> IO ()
-process' (Output s) = printOutput s
-process' (Quit d) = exitWith d
+process' :: QIO -> Env -> IO Env
+process' (Output s) e = printOutput s >> return e
+process' (Input idfr) e = do
+  str <- getLine
+  return $ varInsert idfr (ValueString str) e
+process' (Quit d) e = exitWith d >> return e
 
 printOutput :: String -> IO()
 printOutput "" = return ()
@@ -72,6 +78,7 @@ initialEnv = Env (Map.fromList [
   ,("approx", ValueBuiltinExp valuisedApprox)
   ,("exp", ValueBuiltinExp valuisedExp)
   ,("floor", ValueBuiltinExp valuisedFloor)
+  ,("input", ValueBuiltinExp valuisedInput)
   ,("print", ValueBuiltinExp valuisedPrint)
   ,("quit", ValueBuiltinExp valuisedQuit)
   ]) Seq.empty

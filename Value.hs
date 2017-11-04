@@ -33,6 +33,7 @@ data Value
 -- Something that can be put into the IO queue.
 data QIO
   = Output String
+  | Input String
   | Quit ExitCode
   deriving Show
 
@@ -107,6 +108,10 @@ valuisedFloor _ = ValueFailure "Error: floor expected 1 rational argument"
 valuisedPrint :: [Value] -> Value
 valuisedPrint [ValueString s] = ValueIO $ Output s
 valuisedPrint _ = ValueFailure "Error: print expected 1 string argument"
+
+valuisedInput :: [Value] -> Value
+valuisedInput [ValueString s] = ValueIO $ Input s
+valuisedInput _ = ValueFailure "Error: input expected 1 string argument"
 
 valuisedQuit :: [Value] -> Value
 valuisedQuit [ValueRat a]
