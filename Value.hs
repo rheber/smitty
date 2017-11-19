@@ -11,29 +11,35 @@ data Value
   | ValueBool Bool
   | ValueRat Rational
   | ValueString String
-  | ValueIO QIO
   | ValueIdfr String
-  | ValueReasgn String Value
-  | ValueInit String Value
-  | ValueDelete String
-  | ValueSeq Value Value
-  | ValueSelection Value Value Value
-  | ValueWhile Value Value Value
-  | ValueBinOp String Value Value
-  | ValueBinExp (Value -> Value -> Value)
-  | ValueUnOp String Value
-  | ValueUnExp (Value -> Value)
-  | ValueFunction Value [Value]
-  | ValueBuiltinExp ([Value] -> Value)
+  | ValueBinCall String Value Value
+  | ValueBinDef (Value -> Value -> Value)
+  | ValueUnCall String Value
+  | ValueUnDef (Value -> Value)
+  | ValueFuncCall Value [Value]
+  | ValueFuncDef [Value] Stmt
+  | ValueBuiltinDef ([Value] -> Value)
+  | ValueIO ActionIO
   | ValueReturn Value
-  | ValueFuncdef [Value] Value
   | ValueFailure String
   deriving Show
 
--- Something that can be put into the IO queue.
-data QIO
+data Stmt
+  = StmtEmpty
+  | StmtSeqEnd
+  | StmtValue Value
+  | StmtInit String Value
+  | StmtReasgn String Value
+  | StmtDelete String
+  | StmtSeq Stmt Stmt
+  | StmtSelect Value Stmt Stmt
+  | StmtWhile Stmt Value Stmt
+  | StmtReturn Value
+  | StmtFailure String
+  deriving Show
+
+data ActionIO
   = Output String
-  | Input String
   | Quit ExitCode
   deriving Show
 
@@ -41,6 +47,9 @@ vIdfr :: Value -> String
 vIdfr (ValueIdfr s) = s
 vIdfr x = show x
 
+instance Eq Stmt where
+  StmtEmpty == StmtEmpty = True
+  _ == _ = False
 instance Eq Value where
   (ValueBool a) == (ValueBool b) = a == b
   (ValueRat a) == (ValueRat b) = a == b
@@ -69,6 +78,7 @@ printValue (ValueBool False) = ":("
 printValue (ValueBool True) = ":)"
 printValue (ValueRat r) = (show $ numerator r) ++ " / " ++ (show $ denominator r)
 printValue (ValueString s) = "\"" ++ s ++ "\"" -- Escapes in s not interpreted.
+printValue (ValueReturn r) = printValue r
 printValue (ValueFailure s) = s
 printValue v = show v
 
@@ -108,10 +118,6 @@ valuisedFloor _ = ValueFailure "Error: floor expected 1 rational argument"
 valuisedPrint :: [Value] -> Value
 valuisedPrint [ValueString s] = ValueIO $ Output s
 valuisedPrint _ = ValueFailure "Error: print expected 1 string argument"
-
-valuisedInput :: [Value] -> Value
-valuisedInput [ValueString s] = ValueIO $ Input s
-valuisedInput _ = ValueFailure "Error: input expected 1 string argument"
 
 valuisedQuit :: [Value] -> Value
 valuisedQuit [ValueRat a]

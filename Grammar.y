@@ -2,7 +2,7 @@
 module Grammar where
 
 import Lexer (E, Token(..), parseError)
-import Value (Value(..))
+import Value (Value(..), Stmt(..))
 }
 
 %name parseStmt
@@ -37,63 +37,63 @@ import Value (Value(..))
   ',' {TokenComma}
 %%
 
-Stmts :: {Value}
-  : LineStmt ';' Stmts {ValueSeq $1 $3}
-  | While Stmts {ValueSeq $1 $2}
-  | Selection Stmts {ValueSeq $1 $2}
-  | LineStmt {$1}
+Stmts :: {Stmt}
+  : LineStmt ';' Stmts {StmtSeq $1 $3}
+  | While Stmts {StmtSeq $1 $2}
+  | Selection Stmts {StmtSeq $1 $2}
+  | LineStmt {StmtSeq $1 StmtSeqEnd}
 
-LineStmt :: {Value}
-  : {- empty -} {ValueEmpty}
-  | '$' Disj {ValueReturn $2}
-  | '$' {ValueReturn ValueEmpty}
+LineStmt :: {Stmt}
+  : {- empty -} {StmtEmpty}
+  | '$' Disj {StmtReturn $2}
+  | '$' {StmtReturn ValueEmpty}
   | Asgn {$1}
   | Delete {$1}
 
-Selection :: {Value}
-  : '?' Paren '{' Stmts '}' '::' SelectionTrailer {ValueSelection $2 $4 $7}
-  | '?' Paren '{' Stmts '}' {ValueSelection $2 $4 ValueEmpty}
+Selection :: {Stmt}
+  : '?' Paren '{' Stmts '}' '::' SelectionTrailer {StmtSelect $2 $4 $7}
+  | '?' Paren '{' Stmts '}' {StmtSelect $2 $4 StmtEmpty}
 
-SelectionTrailer :: {Value}
+SelectionTrailer :: {Stmt}
   : '{' Stmts '}' {$2}
-  | Paren '{' Stmts '}' {ValueSelection $1 $3 ValueEmpty}
-  | Paren '{' Stmts '}' '::' SelectionTrailer {ValueSelection $1 $3 $6}
+  | Paren '{' Stmts '}' {StmtSelect $1 $3 StmtEmpty}
+  | Paren '{' Stmts '}' '::' SelectionTrailer {StmtSelect $1 $3 $6}
 
-While :: {Value}
-  : '@' '{' Stmts '}' Paren '{' Stmts '}' {ValueWhile $3 $5 $7}
-  | '@' Paren '{' Stmts '}' {ValueWhile ValueEmpty $2 $4}
-  | '@' '{' Stmts '}' Paren {ValueWhile $3 $5 ValueEmpty}
+While :: {Stmt}
+  : '@' '{' Stmts '}' Paren '{' Stmts '}' {StmtWhile $3 $5 $7}
+  | '@' Paren '{' Stmts '}' {StmtWhile StmtEmpty $2 $4}
+  | '@' '{' Stmts '}' Paren {StmtWhile $3 $5 StmtEmpty}
 
-Asgn :: {Value}
-  : identifier '::=' Disj {ValueReasgn $1 $3}
-  | identifier ':=' Disj {ValueInit $1 $3}
-  | Disj {$1}
+Asgn :: {Stmt}
+  : identifier '::=' Disj {StmtReasgn $1 $3}
+  | identifier ':=' Disj {StmtInit $1 $3}
+  | Disj {StmtValue $1}
 
-Delete :: {Value}
-  : '(' '~' identifier ')' {ValueDelete $3}
+Delete :: {Stmt}
+  : '(' '~' identifier ')' {StmtDelete $3}
 
 Disj :: {Value}
-  : Disj disjOp Conj {ValueBinOp $2 $1 $3}
+  : Disj disjOp Conj {ValueBinCall $2 $1 $3}
   | Conj {$1}
 
 Conj :: {Value}
-  : Conj conjOp Cmp {ValueBinOp $2 $1 $3}
+  : Conj conjOp Cmp {ValueBinCall $2 $1 $3}
   | Cmp {$1}
 
 Cmp :: {Value}
-  : Cmp cmpOp Sum {ValueBinOp $2 $1 $3}
+  : Cmp cmpOp Sum {ValueBinCall $2 $1 $3}
   | Sum {$1}
 
 Sum :: {Value}
-  : Sum sumOp Term {ValueBinOp $2 $1 $3}
+  : Sum sumOp Term {ValueBinCall $2 $1 $3}
   | Term {$1}
 
 Term :: {Value}
-  : Term termOp Factor {ValueBinOp $2 $1 $3}
+  : Term termOp Factor {ValueBinCall $2 $1 $3}
   | Factor {$1}
 
 Factor :: {Value}
-  : Atom Args {ValueFunction $1 $2}
+  : Atom Args {ValueFuncCall $1 $2}
   | Atom {$1}
 
 {-
@@ -118,7 +118,7 @@ Idfrlist :: {[Value]}
   | Idfr ',' Idfrlist {$1:$3}
 
 Funcdef :: {Value}
-  : '\\' Idfrs '{' Stmts '}' {ValueFuncdef $2 $4}
+  : '\\' Idfrs '{' Stmts '}' {ValueFuncDef $2 $4}
 
 Idfr :: {Value}
   : identifier {ValueIdfr $1}
@@ -133,7 +133,7 @@ Atom :: {Value}
 
 Paren :: {Value}
   : '(' Disj ')' {$2}
-  | '(' UnOp Disj ')' {ValueUnOp $2 $3}
+  | '(' UnOp Disj ')' {ValueUnCall $2 $3}
 
 UnOp :: {String}
   : disjOp {$1}

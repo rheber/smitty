@@ -6,47 +6,58 @@ import System.Exit (exitWith)
 
 import Value
 
--- Variables and output queue.
-data Env = Env {vars :: (Map.Map String Value), ioq :: (Seq.Seq QIO)} deriving Show
+-- Variables in current scope, IO queue and most recent value.
+data Env = Env {vars :: (Map.Map String Value),
+                ioq :: (Seq.Seq ActionIO),
+                lastValue :: Value}
+  deriving Show
+
+clearValue :: Env -> Env
+clearValue (Env m q _) = Env m q ValueEmpty
+
+errValue :: Env -> String -> Env
+errValue (Env m q _) f = Env m q $ ValueFailure f
 
 varLookup :: String -> Env -> Value
-varLookup name (Env m _) = Map.findWithDefault
+varLookup name (Env m _ _) = Map.findWithDefault
   (ValueFailure "Error: Variable used before initialised") name m
 
 varMember :: String -> Env -> Bool
-varMember name (Env m _) = Map.member name m
+varMember name (Env m _ _) = Map.member name m
 
 varInsert :: String -> Value -> Env -> Env
-varInsert name v (Env m q) = Env (Map.insert name v m) q
+varInsert name v (Env m q lv) = Env (Map.insert name v m) q lv
 
 varDelete :: String -> Env -> Env
-varDelete name (Env m q) = Env (Map.delete name m) q
+varDelete name (Env m q lv) = Env (Map.delete name m) q lv
 
 -- Add values to an env.
 varUnion :: [String] -> [Value] -> Env -> Env
-varUnion names vals (Env oldV oldQ) =
-  Env (union (Map.fromList $ Prelude.zip names vals) oldV) oldQ
+varUnion names vals (Env oldVals q lv) =
+  Env (union (Map.fromList $ Prelude.zip names vals) oldVals) q lv
 
--- Put something into the IO queue.
-qIO :: QIO -> Env -> Env
-qIO i (Env m q) = Env m (q |> i)
+-- Put something into IO queue.
+qIO :: ActionIO -> Env -> Env
+qIO i (Env m q lv) = Env m (q |> i) lv
 
--- Split the queue from the environment.
-dq :: Env -> (Env, Seq.Seq QIO)
-dq (Env m q) = ((Env m Seq.empty), q)
+-- Strip IO queue from variables.
+dq :: Env -> (Env, Seq.Seq ActionIO)
+dq (Env m q lv) = ((Env m Seq.empty lv), q)
 
-processq :: Seq.Seq QIO -> Env -> IO Env
-processq xs e
-  | Seq.null xs  = return e
+-- Main queue execution function.
+execq :: Env -> IO Env
+execq e = case dq e of
+  (e', q) -> execq' q e'
+
+execq' :: Seq.Seq ActionIO -> Env -> IO Env
+execq' xs e
+  | Seq.null xs = return e
   | otherwise = case (Seq.splitAt 1 xs) of
-    (h, t) -> (process' (Seq.index h 0) e) >>= processq t
+    (h, t) -> (execIO (Seq.index h 0) e) >>= execq' t
 
-process' :: QIO -> Env -> IO Env
-process' (Output s) e = printOutput s >> return e
-process' (Input idfr) e = do
-  str <- getLine
-  return $ varInsert idfr (ValueString str) e
-process' (Quit d) e = exitWith d >> return e
+execIO :: ActionIO -> Env -> IO Env
+execIO (Output s) e = printOutput s >> return e
+execIO (Quit d) e = exitWith d >> return e
 
 printOutput :: String -> IO()
 printOutput "" = return ()
@@ -57,28 +68,27 @@ printOutput ('\\':'t':xs) = putChar '\t' >> printOutput xs
 printOutput (x:xs) = putChar x >> printOutput xs
 
 emptyEnv :: Env
-emptyEnv = Env Map.empty Seq.empty
+emptyEnv = Env Map.empty Seq.empty ValueEmpty
 
 -- Environment loaded with standard operations.
 initialEnv :: Env
 initialEnv = Env (Map.fromList [
-  ("||", ValueBinExp $ valuiseBool (||))
-  ,("&&", ValueBinExp $ valuiseBool (&&))
-  ,("==", ValueBinExp $ valuiseEq (==))
-  ,("!=", ValueBinExp $ valuiseEq (/=))
-  ,("<", ValueBinExp $ valuiseEq (<))
-  ,("<=", ValueBinExp $ valuiseEq (<=))
-  ,(">", ValueBinExp $ valuiseEq (>))
-  ,(">=", ValueBinExp $ valuiseEq (>=))
-  ,("+", ValueBinExp $ valuiseRat (+))
-  ,("-", ValueBinExp $ valuiseRat (-))
-  ,("*", ValueBinExp $ valuiseRat (*))
-  ,("/", ValueBinExp $ valuiseNonzero (/))
-  ,("!", ValueUnExp valuisedNeg)
-  ,("approx", ValueBuiltinExp valuisedApprox)
-  ,("exp", ValueBuiltinExp valuisedExp)
-  ,("floor", ValueBuiltinExp valuisedFloor)
-  ,("input", ValueBuiltinExp valuisedInput)
-  ,("print", ValueBuiltinExp valuisedPrint)
-  ,("quit", ValueBuiltinExp valuisedQuit)
-  ]) Seq.empty
+  ("||", ValueBinDef $ valuiseBool (||))
+  ,("&&", ValueBinDef $ valuiseBool (&&))
+  ,("==", ValueBinDef $ valuiseEq (==))
+  ,("!=", ValueBinDef $ valuiseEq (/=))
+  ,("<", ValueBinDef $ valuiseEq (<))
+  ,("<=", ValueBinDef $ valuiseEq (<=))
+  ,(">", ValueBinDef $ valuiseEq (>))
+  ,(">=", ValueBinDef $ valuiseEq (>=))
+  ,("+", ValueBinDef $ valuiseRat (+))
+  ,("-", ValueBinDef $ valuiseRat (-))
+  ,("*", ValueBinDef $ valuiseRat (*))
+  ,("/", ValueBinDef $ valuiseNonzero (/))
+  ,("!", ValueUnDef valuisedNeg)
+  ,("approx", ValueBuiltinDef valuisedApprox)
+  ,("exp", ValueBuiltinDef valuisedExp)
+  ,("floor", ValueBuiltinDef valuisedFloor)
+  ,("print", ValueBuiltinDef valuisedPrint)
+  ,("quit", ValueBuiltinDef valuisedQuit)
+  ]) Seq.empty ValueEmpty
