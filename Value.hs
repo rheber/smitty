@@ -40,6 +40,7 @@ data Stmt
 
 data ActionIO
   = Output String
+  | Input
   | Quit ExitCode
   deriving Show
 
@@ -118,6 +119,10 @@ valuisedFloor _ = ValueFailure "Error: floor expected 1 rational argument"
 valuisedPrint :: [Value] -> Value
 valuisedPrint [ValueString s] = ValueIO $ Output s
 valuisedPrint _ = ValueFailure "Error: print expected 1 string argument"
+
+valuisedInput :: [Value] -> Value
+valuisedInput [ValueEmpty] = ValueIO Input
+valuisedInput _ = ValueFailure "Error: input expected 0 arguments"
 
 valuisedQuit :: [Value] -> Value
 valuisedQuit [ValueRat a]

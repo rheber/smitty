@@ -4,7 +4,7 @@ import System.IO (stdout)
 import Grammar(parseStmt)
 import Lexer (E, lexer)
 import Env (Env(..), varInsert, varDelete, varLookup, varMember, varUnion,
-  clearValue, errValue, qIO, execq, execIO, initialEnv)
+  clearValue, errValue, execIO, initialEnv)
 import Value (Value(..), Stmt(..), vIdfr, printValue)
 import Getopt (Opts(..), defaultOpts, parseArgs)
 
@@ -62,7 +62,7 @@ eval (ValueFuncCall f xs) e = do
     func@_ -> do
       loc <- localEnv func e args
       evalFunc func loc args
-eval (ValueIO i) e =  execIO i e >> return ValueEmpty
+eval (ValueIO i) e = execIO i e >>= \s -> return $ inputValue s
 eval (ValueReturn v) e = eval v e
 eval v _ = return v
 
@@ -91,8 +91,7 @@ exec (StmtReasgn name v) e = case v of
        else return $ errValue e "Error: Variable not initialised"
 exec (StmtDelete name) e = return $ varDelete name $ clearValue e
 exec (StmtSeq a b) e = do
-  m <- exec a e
-  e' <- execq m
+  e' <- exec a e
   case lastValue e' of
     ValueFailure _ -> return e'
     ValueReturn _ -> return e'

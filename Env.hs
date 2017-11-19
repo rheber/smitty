@@ -1,14 +1,13 @@
 module Env where
 
 import Data.Map as Map
-import Data.Sequence as Seq
 import System.Exit (exitWith)
 
 import Value
 
--- Variables in current scope, IO queue and most recent value.
+-- Variables in current scope, last string read and most recent evaluated value.
 data Env = Env {vars :: (Map.Map String Value),
-                ioq :: (Seq.Seq ActionIO),
+                inputValue :: Value,
                 lastValue :: Value}
   deriving Show
 
@@ -36,28 +35,10 @@ varUnion :: [String] -> [Value] -> Env -> Env
 varUnion names vals (Env oldVals q lv) =
   Env (union (Map.fromList $ Prelude.zip names vals) oldVals) q lv
 
--- Put something into IO queue.
-qIO :: ActionIO -> Env -> Env
-qIO i (Env m q lv) = Env m (q |> i) lv
-
--- Strip IO queue from variables.
-dq :: Env -> (Env, Seq.Seq ActionIO)
-dq (Env m q lv) = ((Env m Seq.empty lv), q)
-
--- Main queue execution function.
-execq :: Env -> IO Env
-execq e = case dq e of
-  (e', q) -> execq' q e'
-
-execq' :: Seq.Seq ActionIO -> Env -> IO Env
-execq' xs e
-  | Seq.null xs = return e
-  | otherwise = case (Seq.splitAt 1 xs) of
-    (h, t) -> (execIO (Seq.index h 0) e) >>= execq' t
-
 execIO :: ActionIO -> Env -> IO Env
-execIO (Output s) e = printOutput s >> return e
-execIO (Quit d) e = exitWith d >> return e
+execIO (Output s) e = printOutput s >> return e {inputValue = ValueEmpty}
+execIO Input e = getLine >>= \s -> return e {inputValue = ValueString s}
+execIO (Quit d) e = exitWith d >> return e {inputValue = ValueEmpty}
 
 printOutput :: String -> IO()
 printOutput "" = return ()
@@ -68,7 +49,7 @@ printOutput ('\\':'t':xs) = putChar '\t' >> printOutput xs
 printOutput (x:xs) = putChar x >> printOutput xs
 
 emptyEnv :: Env
-emptyEnv = Env Map.empty Seq.empty ValueEmpty
+emptyEnv = Env Map.empty ValueEmpty ValueEmpty
 
 -- Environment loaded with standard operations.
 initialEnv :: Env
@@ -89,6 +70,7 @@ initialEnv = Env (Map.fromList [
   ,("approx", ValueBuiltinDef valuisedApprox)
   ,("exp", ValueBuiltinDef valuisedExp)
   ,("floor", ValueBuiltinDef valuisedFloor)
+  ,("input", ValueBuiltinDef valuisedInput)
   ,("print", ValueBuiltinDef valuisedPrint)
   ,("quit", ValueBuiltinDef valuisedQuit)
-  ]) Seq.empty ValueEmpty
+  ]) ValueEmpty ValueEmpty

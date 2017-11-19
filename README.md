@@ -116,6 +116,7 @@ double(4) # 8 / 1 #
 approx(4 / 8)     # "0.5" #
 exp(4, 8)         # 65536 / 1 #
 floor(4 / 8)      # 0 / 1 #
+input()           # Reads string from stdin #
 print("Ahoy!\n"); # Prints argument to stdout #
 quit(0)           # Quits with the given exit code #
 ```
