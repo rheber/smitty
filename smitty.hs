@@ -52,6 +52,8 @@ eval (ValueUnCall name b) e = case varLookup name e of
   ValueFailure _ -> return $ ValueFailure $
     "Error: Undefined operator " ++ show name
   ValueUnDef op -> op <$> eval b e
+eval (ValueMethCall x f [ValueEmpty]) e = eval (ValueFuncCall f [x]) e
+eval (ValueMethCall x f xs) e = eval (ValueFuncCall f (x:xs)) e
 eval (ValueFuncCall f xs) e = do
   v <- eval f e
   args <- evalMap xs e

@@ -35,6 +35,7 @@ import Value (Value(..), Stmt(..))
   '@' {TokenAt}
   '~' {TokenTilde}
   ',' {TokenComma}
+  '.' {TokenDot}
 %%
 
 Stmts :: {Stmt}
@@ -94,6 +95,7 @@ Term :: {Value}
 
 Factor :: {Value}
   : Atom Args {ValueFuncCall $1 $2}
+  | Atom '.' Atom Args {ValueMethCall $1 $3 $4}
   | Atom {$1}
 
 {-

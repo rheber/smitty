@@ -34,6 +34,7 @@ data Token
   | TokenDollar
   | TokenTilde
   | TokenComma
+  | TokenDot
   | InvalidToken Char
   | MissingQuoteToken
   deriving Show
@@ -69,7 +70,7 @@ lexOp s = case span isOpchar s of
     '/' -> TokenTermOp op:lexer rest
     '%' -> TokenTermOp op:lexer rest
 
-opchars = ".|&=!<>+-*/%"
+opchars = "|&=!<>+-*/%"
 isOpchar :: Char -> Bool
 isOpchar c = elem c opchars
 
@@ -92,6 +93,7 @@ lexer ('?':cs) = TokenQM:lexer cs
 lexer ('@':cs) = TokenAt:lexer cs
 lexer ('~':cs) = TokenTilde:lexer cs
 lexer (',':cs) = TokenComma:lexer cs
+lexer ('.':cs) = TokenDot:lexer cs
 lexer ('"':cs) = lexString cs
 lexer (c:cs)
   | isSpace c = lexer cs

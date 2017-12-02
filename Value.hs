@@ -16,6 +16,7 @@ data Value
   | ValueBinDef (Value -> Value -> Value)
   | ValueUnCall String Value
   | ValueUnDef (Value -> Value)
+  | ValueMethCall Value Value [Value]
   | ValueFuncCall Value [Value]
   | ValueFuncDef [Value] Stmt
   | ValueBuiltinDef ([Value] -> Value)
